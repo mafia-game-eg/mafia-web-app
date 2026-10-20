@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import type { ReactNode } from "react";
+import RegisterSW from "@/components/mafia/RegisterSW";
 import "./globals.css";
 
 const thmanyah = localFont({
@@ -20,10 +21,14 @@ export const metadata: Metadata = {
   title: "المافيا | لعبة الغموض الجماعية",
   description:
     "لعبة المافيا أونلاين لعدد كبير من اللاعبين، تُلعب بالكامل من الموبايل وبصمت تام، والتطبيق هو الراوي والحكم.",
-  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    title: "المافيا",
+    statusBarStyle: "black-translucent",
+  },
   icons: {
     icon: "/icons/icon-512.png",
-    apple: "/icons/icon-512.png",
+    apple: "/icons/icon-192.png",
   },
 };
 
@@ -38,7 +43,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="ar" dir="rtl" className={thmanyah.variable}>
-     <body className="min-h-dvh font-(family-name:--font-thmanyah) antialiased">{children}</body>
+      <body className="min-h-dvh font-(family-name:--font-thmanyah) antialiased">
+        {children}
+        <RegisterSW />
+      </body>
     </html>
   );
 }
