@@ -1,0 +1,16 @@
+{
+  "name": "المافيا - لعبة الغموض الجماعية",
+  "short_name": "المافيا",
+  "description": "لعبة المافيا أونلاين، صمت تام والتطبيق هو الحكم.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#07060c",
+  "theme_color": "#0f0c1a",
+  "orientation": "portrait",
+  "lang": "ar",
+  "dir": "rtl",
+  "icons": [
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
