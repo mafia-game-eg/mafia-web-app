@@ -2,10 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { signOut } from "next-auth/react";
 import {
   Camera,
   Check,
   CircleHelp,
+  LogOut,
+  Mail,
   Trash2,
   UserRound,
   Volume2,
@@ -17,6 +20,8 @@ import ThemeToggle from "./ThemeToggle";
 import { fileToAvatar, loadProfile, saveProfile, type Profile } from "@/lib/client/profile";
 import { isMuted, setMuted } from "@/lib/client/sound";
 
+const WELCOME_KEY = "mafia-welcome-seen";
+
 export default function Navbar({
   onOpenHowTo,
   onProfileChange,
@@ -25,8 +30,10 @@ export default function Navbar({
   onProfileChange?: (p: Profile) => void;
 }) {
   const [profile, setProfile] = useState<Profile>({ name: "", avatar: null });
+  const [email, setEmail] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [welcomeOpen, setWelcomeOpen] = useState(false);
   const [muted, setMutedState] = useState(false);
 
   const [draftName, setDraftName] = useState("");
@@ -38,6 +45,28 @@ export default function Navbar({
   useEffect(() => {
     setProfile(loadProfile());
     setMutedState(isMuted());
+
+    // الملف الشخصي الحقيقي من الداتا بيز
+    fetch("/api/profile")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!data) return;
+        const next: Profile = { name: data.username ?? "", avatar: data.avatar ?? null };
+        saveProfile(next);
+        setProfile(next);
+        setEmail(data.email ?? "");
+        onProfileChange?.(next);
+
+        // رسالة الترحيب: لو اليوزر نيم لسه التلقائي ومشافهاش قبل كده
+        try {
+          const isAuto = /^player\d+$/.test(next.name);
+          if (isAuto && localStorage.getItem(WELCOME_KEY) !== next.name) {
+            setWelcomeOpen(true);
+          }
+        } catch {}
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -57,6 +86,18 @@ export default function Navbar({
     setError("");
     setMenuOpen(false);
     setProfileOpen(true);
+  }
+
+  function closeWelcome() {
+    try {
+      localStorage.setItem(WELCOME_KEY, profile.name);
+    } catch {}
+    setWelcomeOpen(false);
+  }
+
+  function changeFromWelcome() {
+    closeWelcome();
+    openProfile();
   }
 
   async function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -81,17 +122,35 @@ export default function Navbar({
     setBusy(false);
   }
 
-  function saveDraft() {
-    const name = draftName.trim();
+  async function saveDraft() {
+    const name = draftName.trim().toLowerCase();
     if (!name) {
-      setError("اكتب اسمك أولًا من فضلك.");
+      setError("اكتب اليوزر نيم أولًا من فضلك.");
       return;
     }
-    const next: Profile = { name, avatar: draftAvatar };
-    saveProfile(next);
-    setProfile(next);
-    onProfileChange?.(next);
-    setProfileOpen(false);
+    setBusy(true);
+    setError("");
+    try {
+      const res = await fetch("/api/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: name, avatar: draftAvatar }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error ?? "حصلت مشكلة، جرّب تاني.");
+        setBusy(false);
+        return;
+      }
+      const next: Profile = { name, avatar: draftAvatar };
+      saveProfile(next);
+      setProfile(next);
+      onProfileChange?.(next);
+      setProfileOpen(false);
+    } catch {
+      setError("مفيش اتصال، جرّب تاني.");
+    }
+    setBusy(false);
   }
 
   function toggleSound() {
@@ -110,7 +169,7 @@ export default function Navbar({
         className="sticky top-0 z-40 border-b border-white/10 bg-black/60 backdrop-blur-md"
       >
         <div className="mx-auto grid h-24 max-w-md grid-cols-[1fr_auto_1fr] items-center px-5 pt-5">
-                   {/* في RTL أول عنصر بيطلع على اليمين: زرار القايمة */}
+          {/* في RTL أول عنصر بيطلع على اليمين: زرار القايمة */}
           <button
             onClick={() => setMenuOpen(true)}
             aria-label="القائمة"
@@ -149,7 +208,6 @@ export default function Navbar({
             <Avatar name={profile.name} src={profile.avatar} size={44} />
           </button>
         </div>
-
       </header>
 
       {/* القايمة الجانبية */}
@@ -162,8 +220,8 @@ export default function Navbar({
         <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setMenuOpen(false)} />
         <aside
           className={`absolute right-0 top-0 flex h-full w-72 max-w-[80%] flex-col border-l border-white/10 bg-[var(--bg-1)] p-5 shadow-2xl transition-transform duration-300 ease-out ${
-                         menuOpen ? "translate-x-0" : "translate-x-full"
-                       }`}
+            menuOpen ? "translate-x-0" : "translate-x-full"
+          }`}
         >
           <div className="mb-5 flex items-center justify-between">
             <span className="font-bold text-[var(--gold)]">القائمة</span>
@@ -182,7 +240,9 @@ export default function Navbar({
           >
             <Avatar name={profile.name} src={profile.avatar} size={52} />
             <span className="min-w-0">
-              <span className="block truncate font-bold">{profile.name || "لاعب جديد"}</span>
+              <span className="block truncate font-bold" dir="ltr">
+                {profile.name ? `@${profile.name}` : "لاعب جديد"}
+              </span>
               <span className="text-xs text-[var(--text-1)]">تعديل الملف الشخصي</span>
             </span>
           </button>
@@ -210,7 +270,14 @@ export default function Navbar({
               )}
               الصوت: {muted ? "مكتوم" : "شغّال"}
             </button>
-                        <ThemeToggle className={menuItem} />
+            <ThemeToggle className={menuItem} />
+            <button
+              onClick={() => signOut({ callbackUrl: "/login" })}
+              className={menuItem}
+            >
+              <LogOut className="h-5 w-5 text-red-400" />
+              تسجيل الخروج
+            </button>
           </nav>
 
           <p className="mt-auto text-center text-xs text-[var(--text-1)]/60">لعبة المافيا</p>
@@ -263,14 +330,36 @@ export default function Navbar({
               )}
             </div>
 
-            <label className="mb-1.5 block text-xs text-[var(--text-1)]">اسمك</label>
+            <label className="mb-1.5 block text-xs text-[var(--text-1)]">اليوزر نيم</label>
             <input
               value={draftName}
-              onChange={(e) => setDraftName(e.target.value)}
+              onChange={(e) =>
+                setDraftName(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))
+              }
+              dir="ltr"
               maxLength={20}
-              placeholder="اكتب اسمك هنا..."
-              className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 outline-none transition focus:border-[var(--gold)]/60 focus:ring-2 focus:ring-[var(--gold)]/30"
+              placeholder="username"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-left outline-none transition focus:border-[var(--gold)]/60 focus:ring-2 focus:ring-[var(--gold)]/30"
             />
+            <p className="mt-1.5 text-xs text-[var(--text-1)]/80">
+              حروف إنجليزي صغيرة وأرقام و _ بس (من 3 لـ 20). أصحابك هيضيفوك بيه.
+            </p>
+
+            {email && (
+              <div className="mt-4">
+                <label className="mb-1.5 block text-xs text-[var(--text-1)]">الإيميل</label>
+                <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-[var(--text-1)]">
+                  <Mail className="h-4 w-4 shrink-0" />
+                  <span className="truncate" dir="ltr">{email}</span>
+                </div>
+                <p className="mt-1.5 text-xs text-[var(--text-1)]/80">
+                  الإيميل ده ظاهر ليك إنت بس، ومحدش من اللاعبين بيشوفه.
+                </p>
+              </div>
+            )}
 
             {error && (
               <p className="mt-3 rounded-xl bg-red-500/15 px-3 py-2 text-center text-sm text-red-300">{error}</p>
@@ -282,7 +371,45 @@ export default function Navbar({
               className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-l from-[var(--accent)] to-[var(--accent-2)] px-4 py-3.5 text-base font-bold shadow-lg shadow-red-900/30 disabled:opacity-50"
             >
               <Check className="h-5 w-5" />
-              {busy ? "جارِ تجهيز الصورة..." : "حفظ"}
+              {busy ? "جارِ الحفظ..." : "حفظ"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* رسالة الترحيب أول مرة */}
+      {welcomeOpen && (
+        <div
+          dir="rtl"
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
+        >
+          <div className="animate-fade-in-up w-full max-w-sm rounded-3xl border border-white/10 bg-[var(--bg-1)] p-6 text-center shadow-2xl">
+            <div className="mb-4 flex justify-center">
+              <Avatar name={profile.name} src={profile.avatar} size={72} />
+            </div>
+            <h2 className="mb-2 text-lg font-bold text-[var(--gold)]">أهلاً بيك في المافيا 👋</h2>
+            <p className="mb-3 text-sm leading-relaxed text-[var(--text-1)]">
+              اتعمللك يوزر نيم تلقائي، ده اللي أصحابك هيضيفوك بيه:
+            </p>
+            <p
+              dir="ltr"
+              className="mb-5 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 font-bold text-[var(--text-0)]"
+            >
+              @{profile.name}
+            </p>
+            <p className="mb-5 text-sm text-[var(--text-1)]">تحب تغيره دلوقتي؟ وتقدر تغيره في أي وقت من الملف الشخصي.</p>
+
+            <button
+              onClick={changeFromWelcome}
+              className="mb-2 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-l from-[var(--accent)] to-[var(--accent-2)] px-4 py-3.5 text-base font-bold shadow-lg shadow-red-900/30"
+            >
+              تغيير اليوزر نيم
+            </button>
+            <button
+              onClick={closeWelcome}
+              className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold hover:bg-white/10"
+            >
+              سيبه كده
             </button>
           </div>
         </div>
