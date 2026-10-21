@@ -6,7 +6,7 @@ import type {
   Room,
   VoteRevealResult,
 } from "./types";
-import { assignRoles } from "./roles";
+import { assignRoles, ROLE_INFO } from "./roles";
 import { generateId, pickRandom, shuffle } from "./utils";
 import { deleteRoom, rooms } from "./store";
 
@@ -449,7 +449,7 @@ function advanceFromVoteReveal(room: Room) {
       if (player.role) room.revealedRoles[player.id] = player.role;
       pushSystemChat(
         room,
-        `⚖️ تم إعدام ${player.name}. كان دوره: ${player.role ? player.role : "غير معروف"}.`,
+        `⚖️ تم إعدام ${player.name}. كان دوره: ${player.role ? ROLE_INFO[player.role].title : "غير معروف"}.`,
       );
     }
   } else if (reveal?.revote && room.revoteCandidates) {

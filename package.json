@@ -6,7 +6,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "ship": "npm run typecheck && npm run build && git add . && git commit -m \"update\" && git push"
   },
   "dependencies": {
     "dotenv": "17.3.1",

@@ -28,7 +28,7 @@ export default function RoleCard({
       >
         {/* back of card (shown when not held) */}
         <div
-          className="card-face absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-3xl border border-[var(--gold)]/30 bg-gradient-to-br from-[#1a1428] to-[#0c0a14] shadow-2xl"
+          className=" keep-dark card-face absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-3xl border border-[var(--gold)]/30 bg-gradient-to-br from-[#1a1428] to-[#0c0a14] shadow-2xl"
         >
           <div className="text-5xl">🎭</div>
           <p className="px-4 text-center text-sm text-[var(--text-1)]">
@@ -39,7 +39,7 @@ export default function RoleCard({
 
         {/* front of card (shown when held/flipped) */}
         <div
-          className={`card-face back absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-3xl border p-5 text-center shadow-2xl ${
+          className={` keep-dark card-face back absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-3xl border p-5 text-center shadow-2xl ${
             team === "mafia"
               ? "border-red-500/50 bg-gradient-to-br from-[#2a0f16] to-[#140509]"
               : "border-teal-400/40 bg-gradient-to-br from-[#0f2522] to-[#06100f]"

@@ -6,7 +6,6 @@ import {
   Camera,
   Check,
   CircleHelp,
-  Menu,
   Trash2,
   UserRound,
   Volume2,
@@ -14,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import Avatar from "./Avatar";
+import ThemeToggle from "./ThemeToggle";
 import { fileToAvatar, loadProfile, saveProfile, type Profile } from "@/lib/client/profile";
 import { isMuted, setMuted } from "@/lib/client/sound";
 
@@ -110,33 +110,46 @@ export default function Navbar({
         className="sticky top-0 z-40 border-b border-white/10 bg-black/60 backdrop-blur-md"
       >
         <div className="mx-auto grid h-24 max-w-md grid-cols-[1fr_auto_1fr] items-center px-5 pt-5">
-          {/* في RTL أول عنصر بيطلع على اليمين: صورة اللاعب */}
-          <button
-            onClick={openProfile}
-            aria-label="الملف الشخصي"
-            className="justify-self-start rounded-full transition-transform hover:scale-105"
-          >
-            <Avatar name={profile.name} src={profile.avatar} size={48} />
-          </button>
-
-          <Image
-            src="/logo-nav.png"
-            alt="المافيا"
-            width={480}
-            height={120}
-            priority
-            className="h-14 w-auto"
-          />
-
-          {/* آخر عنصر بيطلع على الشمال: زرار القايمة */}
+                   {/* في RTL أول عنصر بيطلع على اليمين: زرار القايمة */}
           <button
             onClick={() => setMenuOpen(true)}
             aria-label="القائمة"
-            className="flex h-12 w-12 items-center justify-center justify-self-end rounded-xl text-white hover:bg-white/10"
+            className="group flex h-11 w-11 flex-col justify-center justify-self-start gap-[6px] text-[var(--text-0)] transition-opacity duration-200 active:opacity-60"
           >
-           <Menu className="h-7 w-7" />
+            <span className="ml-auto block h-[2px] w-6 rounded-full bg-current transition-all duration-300" />
+            <span className="ml-auto block h-[2px] w-4 rounded-full bg-current transition-all duration-300 group-hover:w-6" />
+            <span className="ml-auto block h-[2px] w-5 rounded-full bg-current transition-all duration-300 group-hover:w-6" />
+          </button>
+
+          <div className="flex justify-center">
+            <Image
+              src="/logo-nav.png"
+              alt="المافيا"
+              width={480}
+              height={120}
+              priority
+              className="logo-for-dark h-14 w-auto"
+            />
+            <Image
+              src="/logo-nav-dark.png"
+              alt="المافيا"
+              width={480}
+              height={120}
+              priority
+              className="logo-for-light h-14 w-auto"
+            />
+          </div>
+
+          {/* آخر عنصر بيطلع على الشمال: صورة اللاعب */}
+          <button
+            onClick={openProfile}
+            aria-label="الملف الشخصي"
+            className="h-11 w-11 justify-self-end overflow-hidden rounded-full ring-1 ring-white/10 transition-transform duration-200 hover:scale-105 active:scale-95"
+          >
+            <Avatar name={profile.name} src={profile.avatar} size={44} />
           </button>
         </div>
+
       </header>
 
       {/* القايمة الجانبية */}
@@ -197,6 +210,7 @@ export default function Navbar({
               )}
               الصوت: {muted ? "مكتوم" : "شغّال"}
             </button>
+                        <ThemeToggle className={menuItem} />
           </nav>
 
           <p className="mt-auto text-center text-xs text-[var(--text-1)]/60">لعبة المافيا</p>

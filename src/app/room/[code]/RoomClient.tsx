@@ -562,7 +562,7 @@ function NightView({
       : undefined;
   return (
     <div className="animate-fade-in-up space-y-5">
-      <div className="rounded-3xl border border-indigo-400/20 bg-gradient-to-b from-[#0d0a18] to-[#06050c] p-6 text-center">
+      <div className=" keep-dark rounded-3xl border border-indigo-400/20 bg-gradient-to-b from-[#0d0a18] to-[#06050c] p-6 text-center">
         <Moon className="animate-moon mx-auto mb-2 h-12 w-12 text-indigo-200" strokeWidth={1.5} />
         <p className="text-[var(--text-1)]">الليل نزل رقم {room.nightNumber}... الكل نايم</p>
         <h2 className="mt-2 text-lg font-bold text-[var(--gold)]">{night.label}</h2>

@@ -137,15 +137,15 @@ export default function HeroCarousel({ interval = 3500 }: { interval?: number })
         }`}
       >
         {loopSlides.map((s, i) => (
-          <div key={`${s.src}-${i}`} data-index={i} className="w-full shrink-0 snap-center">
+          <div key={`${s.src}-${i}`} data-index={i} className="w-full shrink-0 snap-center px-3">
             <Image
               src={s.src}
               alt={s.alt}
               width={1800}
               height={780}
               priority={i === 0}
-              className="mx-auto h-auto w-full max-w-md select-none object-cover drop-shadow-[0_0_30px_rgba(255,255,255,0.08)]"
-              draggable={false}
+              
+              draggable={false}className="slide-card mx-auto h-auto w-full max-w-md select-none object-cover"
             />
           </div>
         ))}

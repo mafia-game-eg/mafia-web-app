@@ -1,5 +1,11 @@
 import type { ExtraRoleType, Player, Role, RoleInfo, RoomSettings } from "./types";
 import { shuffle } from "./utils";
+import {
+  computeMafiaCount,
+  hasDetectiveRole,
+  hasDoctorRole,
+  hasExtraRole,
+} from "./composition";
 
 export const ROLE_INFO: Record<Role, RoleInfo> = {
   mafia: {
@@ -46,19 +52,6 @@ export const ROLE_INFO: Record<Role, RoleInfo> = {
   },
 };
 
-export function computeMafiaCount(totalPlayers: number): number {
-  return Math.max(1, Math.floor(totalPlayers / 4));
-}
-
-export function hasDoctorRole(n: number): boolean {
-  return n >= 5;
-}
-export function hasDetectiveRole(n: number): boolean {
-  return n >= 7;
-}
-export function hasExtraRole(n: number): boolean {
-  return n >= 10;
-}
 
 export function assignRoles(
   players: Player[],

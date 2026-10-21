@@ -42,7 +42,14 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="ar" dir="rtl" className={thmanyah.variable}>
+    <html lang="ar" dir="rtl" className={thmanyah.variable} suppressHydrationWarning>
+            <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var t=localStorage.getItem("theme");if(t==="light")document.documentElement.dataset.theme="light"}catch(e){}`,
+          }}
+        />
+      </head>
       <body className="min-h-dvh font-(family-name:--font-thmanyah) antialiased">
         {children}
         <RegisterSW />
