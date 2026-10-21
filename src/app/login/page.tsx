@@ -2,7 +2,7 @@ import Image from "next/image";
 import { redirect } from "next/navigation";
 import { auth, signIn } from "@/auth";
 import LoginButton from "./LoginButton";
-import Faq from "./Faq";
+import FaqSheet from "./Faq";
 
 const features = [
   {
@@ -80,27 +80,27 @@ export default async function LoginPage({
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        padding: "40px 20px calc(24px + env(safe-area-inset-bottom, 0px))",
-        background: "#ffffff",
+        background: "#000000",
+        colorScheme: "dark",
+        color: "#ffffff",
+        padding:
+          "calc(20px + env(safe-area-inset-top, 0px)) 20px calc(16px + env(safe-area-inset-bottom, 0px))",
         overflow: "hidden",
       }}
     >
       <style>{`
-        @keyframes mf-rise {
-          from { opacity: 0; transform: translateY(14px); }
-          to { opacity: 1; transform: translateY(0); }
+        @keyframes mf-spring {
+          0% { opacity: 0; transform: translateY(16px) scale(.98); }
+          60% { opacity: 1; transform: translateY(-2px) scale(1.003); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
         }
-        .mf-rise { opacity: 0; animation: mf-rise .6s cubic-bezier(.22,1,.36,1) forwards; }
-        .mf-d1 { animation-delay: .05s; }
-        .mf-d2 { animation-delay: .16s; }
-        .mf-d3 { animation-delay: .27s; }
-        .mf-d4 { animation-delay: .4s; }
-        .mf-d5 { animation-delay: .52s; }
-        .mf-feature { transition: border-color .2s ease, transform .2s ease; }
-        .mf-feature:hover { border-color: rgba(0,0,0,0.35); transform: translateY(-2px); }
+        .mf-in { opacity: 0; animation: mf-spring .7s cubic-bezier(.34,1.3,.5,1) forwards; }
+        .mf-i1 { animation-delay: .04s; }
+        .mf-i2 { animation-delay: .12s; }
+        .mf-i3 { animation-delay: .22s; }
+        .mf-i4 { animation-delay: .32s; }
         @media (prefers-reduced-motion: reduce) {
-          .mf-rise { animation: none; opacity: 1; }
-          .mf-feature { transition: none; }
+          .mf-in { animation: none; opacity: 1; }
         }
       `}</style>
 
@@ -111,67 +111,53 @@ export default async function LoginPage({
           position: "absolute",
           inset: 0,
           pointerEvents: "none",
-          backgroundImage: "radial-gradient(rgba(0,0,0,0.12) 1px, transparent 1px)",
+          backgroundImage:
+            "radial-gradient(rgba(255,255,255,0.09) 1px, transparent 1px)",
           backgroundSize: "22px 22px",
           WebkitMaskImage:
-            "radial-gradient(ellipse 75% 45% at 50% 18%, #000 0%, transparent 75%)",
+            "radial-gradient(ellipse 75% 40% at 50% 25%, #000 0%, transparent 75%)",
           maskImage:
-            "radial-gradient(ellipse 75% 45% at 50% 18%, #000 0%, transparent 75%)",
+            "radial-gradient(ellipse 75% 40% at 50% 25%, #000 0%, transparent 75%)",
         }}
       />
 
       <div style={{ position: "relative", width: "100%", maxWidth: 380 }}>
-        {/* اللوجو */}
-        <div className="mf-rise mf-d1" style={{ textAlign: "center", marginBottom: 14 }}>
+        {/* اللوجو + سطر */}
+        <div className="mf-in mf-i1" style={{ textAlign: "center" }}>
           <Image
-            src="/logo-nav-dark.png"
+            src="/logo-nav.png"
             alt="المافيا"
             width={480}
             height={120}
             priority
-            style={{ height: 104, width: "auto", margin: "0 auto" }}
+            style={{ height: 88, width: "auto", margin: "0 auto" }}
           />
-          <div
-            aria-hidden="true"
+          <p
             style={{
-              width: 40,
-              height: 3,
-              borderRadius: 3,
-              background: "#0a0a0a",
-              margin: "18px auto 0",
+              margin: "14px auto 22px",
+              fontSize: 15,
+              lineHeight: 1.7,
+              color: "#8e8e93",
+              maxWidth: 280,
             }}
-          />
+          >
+            سجّل دخولك في ثانية، وابدأ تلعب مع صحابك.
+          </p>
         </div>
 
-        <p
-          className="mf-rise mf-d2"
-          style={{
-            fontSize: 15,
-            lineHeight: 1.8,
-            color: "#4a4a4a",
-            margin: "0 auto 24px",
-            maxWidth: 300,
-            textAlign: "center",
-          }}
-        >
-          سجّل دخولك في ثانية، وابدأ تلعب مع صحابك.
-        </p>
-
-        {/* رسالة الخطأ */}
         {error && (
           <div
             role="alert"
-            className="mf-rise mf-d2"
+            className="mf-in mf-i2"
             style={{
               display: "flex",
               alignItems: "flex-start",
               gap: 10,
-              marginBottom: 16,
-              padding: "12px 14px",
+              marginBottom: 12,
+              padding: "11px 14px",
               borderRadius: 16,
-              border: "1px solid rgba(0,0,0,0.85)",
-              background: "#f5f5f5",
-              color: "#0a0a0a",
+              background: "#1c1c1e",
+              color: "#ffffff",
               fontSize: 13,
               lineHeight: 1.7,
             }}
@@ -200,14 +186,14 @@ export default async function LoginPage({
           </div>
         )}
 
-        {/* الكارت الرئيسي */}
+        {/* الكارت */}
         <div
-          className="mf-rise mf-d3"
+          className="mf-in mf-i2"
           style={{
-            borderRadius: 28,
-            padding: "22px 20px 22px",
-            background: "#ffffff",
-            border: "1px solid rgba(0,0,0,0.12)",
+            borderRadius: 26,
+            padding: "16px 16px 18px",
+            background: "#1c1c1e",
+            border: "1px solid rgba(255,255,255,0.08)",
           }}
         >
           <form action={loginWithGoogle}>
@@ -216,24 +202,24 @@ export default async function LoginPage({
 
           <p
             style={{
-              margin: "14px 0 0",
+              margin: "11px 0 0",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               gap: 6,
               textAlign: "center",
               fontSize: 12,
-              lineHeight: 1.7,
-              color: "#666666",
+              lineHeight: 1.6,
+              color: "#8e8e93",
             }}
           >
             <svg
-              width="13"
-              height="13"
+              width="12"
+              height="12"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="2"
+              strokeWidth="2.2"
               strokeLinecap="round"
               strokeLinejoin="round"
               aria-hidden="true"
@@ -245,45 +231,26 @@ export default async function LoginPage({
             بنستخدم اسمك وصورتك بس، ومش بنشوف الباسورد.
           </p>
 
-          {/* الفاصل */}
-          <div
-            aria-hidden="true"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              margin: "22px 0 18px",
-            }}
-          >
-            <span style={{ flex: 1, height: 1, background: "rgba(0,0,0,0.08)" }} />
-            <span style={{ fontSize: 12, color: "#7a7a7a" }}>ليه تسجّل؟</span>
-            <span style={{ flex: 1, height: 1, background: "rgba(0,0,0,0.08)" }} />
-          </div>
-
-          {/* المميزات */}
           <ul
             style={{
               listStyle: "none",
-              margin: 0,
-              padding: 0,
+              margin: "16px 0 0",
+              padding: "16px 0 0",
+              borderTop: "0.5px solid rgba(255,255,255,0.14)",
               display: "grid",
               gridTemplateColumns: "repeat(3, 1fr)",
-              gap: 8,
+              gap: 6,
             }}
           >
             {features.map((f) => (
               <li
                 key={f.title}
-                className="mf-feature"
                 style={{
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
                   textAlign: "center",
-                  gap: 10,
-                  padding: "14px 4px 12px",
-                  borderRadius: 18,
-                  border: "1px solid rgba(0,0,0,0.08)",
+                  gap: 8,
                 }}
               >
                 <span
@@ -291,20 +258,20 @@ export default async function LoginPage({
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    width: 44,
-                    height: 44,
-                    borderRadius: 14,
-                    background: "#0a0a0a",
-                    color: "#ffffff",
+                    width: 40,
+                    height: 40,
+                    borderRadius: 12,
+                    background: "#ffffff",
+                    color: "#000000",
                   }}
                 >
                   <svg
-                    width="21"
-                    height="21"
+                    width="20"
+                    height="20"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
-                    strokeWidth="1.8"
+                    strokeWidth="1.9"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     aria-hidden="true"
@@ -315,10 +282,9 @@ export default async function LoginPage({
                 <div>
                   <p
                     style={{
-                      margin: "0 0 2px",
+                      margin: "0 0 1px",
                       fontSize: 12.5,
                       fontWeight: 700,
-                      color: "#0a0a0a",
                     }}
                   >
                     {f.title}
@@ -327,8 +293,8 @@ export default async function LoginPage({
                     style={{
                       margin: 0,
                       fontSize: 11,
-                      lineHeight: 1.6,
-                      color: "#666666",
+                      lineHeight: 1.5,
+                      color: "#8e8e93",
                     }}
                   >
                     {f.desc}
@@ -339,35 +305,29 @@ export default async function LoginPage({
           </ul>
         </div>
 
-        {/* الأسئلة الشائعة (أكورديون متحرك) */}
-        <div className="mf-rise mf-d4" style={{ marginTop: 18 }}>
-          <Faq items={faqs} />
-        </div>
+        {/* أسئلة شائعة + فوتر */}
+        <div className="mf-in mf-i4" style={{ textAlign: "center" }}>
+          <FaqSheet items={faqs} />
 
-        {/* الفوتر */}
-        <footer
-          className="mf-rise mf-d5"
-          style={{
-            marginTop: 28,
-            paddingTop: 18,
-            borderTop: "1px solid rgba(0,0,0,0.08)",
-            textAlign: "center",
-          }}
-        >
           <p
             style={{
-              margin: "0 0 4px",
-              fontSize: 12,
-              fontWeight: 600,
-              color: "#4a4a4a",
+              margin: "6px 0 0",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+              fontSize: 11.5,
+              color: "#636366",
             }}
           >
-            © {year} المافيا. جميع الحقوق محفوظة.
+            <span>جميع الحقوق محفوظة</span>
+            <span aria-hidden="true">.</span>
+            <span>المافيا</span>
+            <span dir="ltr" style={{ unicodeBidi: "isolate" }}>
+              {year} ©
+            </span>
           </p>
-          <p style={{ margin: 0, fontSize: 11, color: "#9a9a9a" }}>
-            صُنع بحب للعب مع الصحاب
-          </p>
-        </footer>
+        </div>
       </div>
     </main>
   );
