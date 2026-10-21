@@ -1,4 +1,4 @@
-const CACHE = "mafia-v1";
+const CACHE = "mafia-v2";
 const ASSETS = ["/", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 self.addEventListener("install", (e) => {
@@ -21,6 +21,9 @@ self.addEventListener("fetch", (e) => {
   if (req.method !== "GET" || url.origin !== location.origin) return;
   if (url.pathname.startsWith("/api")) return;
 
+  // الفيديو والطلبات الجزئية (Range): نسيبها للمتصفح (Safari بيتعطل لو رجعنا له رد كامل من الكاش)
+  if (req.headers.has("range") || /\.(mp4|webm|mov)$/i.test(url.pathname)) return;
+
   if (req.mode === "navigate") {
     e.respondWith(fetch(req).catch(() => caches.match("/")));
     return;
@@ -31,8 +34,11 @@ self.addEventListener("fetch", (e) => {
       (hit) =>
         hit ||
         fetch(req).then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE).then((c) => c.put(req, copy));
+          // نخزّن الردود الكاملة الناجحة بس (مش 206 ولا الأخطاء)
+          if (res.ok && res.status === 200) {
+            const copy = res.clone();
+            caches.open(CACHE).then((c) => c.put(req, copy));
+          }
           return res;
         })
     )

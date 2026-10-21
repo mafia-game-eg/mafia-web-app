@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import type { ReactNode } from "react";
 import RegisterSW from "@/components/mafia/RegisterSW";
+import SplashScreen from "@/components/mafia/SplashScreen";
 import "./globals.css";
 
 const thmanyah = localFont({
@@ -46,11 +47,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var t=localStorage.getItem("theme");if(t==="light")document.documentElement.dataset.theme="light"}catch(e){}`,
+            __html: `try{var t=localStorage.getItem("theme");if(t==="light")document.documentElement.dataset.theme="light"}catch(e){}try{if(sessionStorage.getItem("mafia_splash_seen")==="1"&&location.search.indexOf("splash")<0)document.documentElement.dataset.splash="seen"}catch(e){}`,
           }}
         />
       </head>
       <body className="min-h-dvh font-(family-name:--font-thmanyah) antialiased">
+        <SplashScreen />
         {children}
         <RegisterSW />
       </body>

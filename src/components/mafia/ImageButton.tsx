@@ -33,7 +33,7 @@ export default function ImageButton({
       onClick={onClick}
       disabled={disabled}
       aria-label={ariaLabel ?? title}
-      className="@container relative block aspect-[16/9] w-full overflow-hidden rounded-3xl border border-[#2a2a2e] bg-[#000000] text-right text-[#ffffff] shadow-md transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:scale-[0.97] disabled:pointer-events-none disabled:opacity-60 motion-reduce:transition-none"
+      className="@container relative block aspect-[16/9] w-full overflow-hidden rounded-2xl border border-[#2a2a2e] bg-[#000000] text-right text-[#ffffff] shadow-md transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 disabled:pointer-events-none disabled:opacity-60 motion-reduce:transition-none"
     >
       {image ? (
         <Image src={image} alt="" fill unoptimized sizes="50vw" className="object-cover" />
