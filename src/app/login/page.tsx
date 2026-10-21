@@ -72,10 +72,11 @@ export default async function LoginPage({
 
   return (
     <main
+      className="mf-login"
       dir="rtl"
       style={{
         position: "relative",
-        minHeight: "100dvh",
+        height: "100dvh",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -89,6 +90,12 @@ export default async function LoginPage({
       }}
     >
       <style>{`
+        /* منع السكرول في صفحة الدخول بس */
+        html:has(.mf-login), body:has(.mf-login) {
+          height: 100%;
+          overflow: hidden;
+          overscroll-behavior: none;
+        }
         @keyframes mf-spring {
           0% { opacity: 0; transform: translateY(16px) scale(.98); }
           60% { opacity: 1; transform: translateY(-2px) scale(1.003); }
@@ -122,7 +129,7 @@ export default async function LoginPage({
       />
 
       <div style={{ position: "relative", width: "100%", maxWidth: 380 }}>
-        {/* اللوجو + سطر */}
+        {/* اللوجو + الخط + سطر */}
         <div className="mf-in mf-i1" style={{ textAlign: "center" }}>
           <Image
             src="/logo-nav.png"
@@ -130,11 +137,26 @@ export default async function LoginPage({
             width={480}
             height={120}
             priority
-            style={{ height: 88, width: "auto", margin: "0 auto" }}
+            style={{
+              height: "clamp(60px, 11dvh, 88px)",
+              width: "auto",
+              margin: "0 auto",
+            }}
+          />
+          {/* الخط الأبيض تحت اللوجو */}
+          <div
+            aria-hidden="true"
+            style={{
+              width: 40,
+              height: 2,
+              borderRadius: 2,
+              background: "#ffffff",
+              margin: "12px auto 0",
+            }}
           />
           <p
             style={{
-              margin: "14px auto 22px",
+              margin: "12px auto 18px",
               fontSize: 15,
               lineHeight: 1.7,
               color: "#8e8e93",
