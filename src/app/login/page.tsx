@@ -2,6 +2,7 @@ import Image from "next/image";
 import { redirect } from "next/navigation";
 import { auth, signIn } from "@/auth";
 import LoginButton from "./LoginButton";
+import Faq from "./Faq";
 
 const features = [
   {
@@ -48,8 +49,8 @@ const faqs = [
     a: "لا. جوجل بتتعامل مع الباسورد بنفسها، واحنا بنستلم اسمك وصورتك بس.",
   },
   {
-    q: "هستخدم بياناتي في إيه؟",
-    a: "بنحفظ ملفك الشخصي وإحصائياتك وقايمة أصدقائك، ومش بنشاركها مع حد.",
+    q: "هتستخدموا بياناتي في إيه؟",
+    a: "بنحفظ ملفك الشخصي وإحصائياتك وقايمة أصدقائك بس.",
   },
 ];
 
@@ -62,6 +63,7 @@ export default async function LoginPage({
   if (session?.user) redirect("/");
 
   const { error } = await searchParams;
+  const year = new Date().getFullYear();
 
   async function loginWithGoogle() {
     "use server";
@@ -78,7 +80,7 @@ export default async function LoginPage({
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        padding: "40px 20px calc(32px + env(safe-area-inset-bottom, 0px))",
+        padding: "40px 20px calc(24px + env(safe-area-inset-bottom, 0px))",
         background: "#ffffff",
         overflow: "hidden",
       }}
@@ -93,15 +95,12 @@ export default async function LoginPage({
         .mf-d2 { animation-delay: .16s; }
         .mf-d3 { animation-delay: .27s; }
         .mf-d4 { animation-delay: .4s; }
+        .mf-d5 { animation-delay: .52s; }
         .mf-feature { transition: border-color .2s ease, transform .2s ease; }
         .mf-feature:hover { border-color: rgba(0,0,0,0.35); transform: translateY(-2px); }
-        .mf-faq summary { list-style: none; cursor: pointer; }
-        .mf-faq summary::-webkit-details-marker { display: none; }
-        .mf-faq[open] .mf-chev { transform: rotate(180deg); }
-        .mf-chev { transition: transform .2s ease; }
         @media (prefers-reduced-motion: reduce) {
           .mf-rise { animation: none; opacity: 1; }
-          .mf-feature, .mf-chev { transition: none; }
+          .mf-feature { transition: none; }
         }
       `}</style>
 
@@ -149,7 +148,7 @@ export default async function LoginPage({
           style={{
             fontSize: 15,
             lineHeight: 1.8,
-            color: "#525252",
+            color: "#4a4a4a",
             margin: "0 auto 24px",
             maxWidth: 300,
             textAlign: "center",
@@ -225,7 +224,7 @@ export default async function LoginPage({
               textAlign: "center",
               fontSize: 12,
               lineHeight: 1.7,
-              color: "#737373",
+              color: "#666666",
             }}
           >
             <svg
@@ -257,7 +256,7 @@ export default async function LoginPage({
             }}
           >
             <span style={{ flex: 1, height: 1, background: "rgba(0,0,0,0.08)" }} />
-            <span style={{ fontSize: 12, color: "#8a8a8a" }}>ليه تسجّل؟</span>
+            <span style={{ fontSize: 12, color: "#7a7a7a" }}>ليه تسجّل؟</span>
             <span style={{ flex: 1, height: 1, background: "rgba(0,0,0,0.08)" }} />
           </div>
 
@@ -329,7 +328,7 @@ export default async function LoginPage({
                       margin: 0,
                       fontSize: 11,
                       lineHeight: 1.6,
-                      color: "#737373",
+                      color: "#666666",
                     }}
                   >
                     {f.desc}
@@ -340,68 +339,35 @@ export default async function LoginPage({
           </ul>
         </div>
 
-        {/* الأسئلة الشائعة */}
-        <div
-          className="mf-rise mf-d4"
+        {/* الأسئلة الشائعة (أكورديون متحرك) */}
+        <div className="mf-rise mf-d4" style={{ marginTop: 18 }}>
+          <Faq items={faqs} />
+        </div>
+
+        {/* الفوتر */}
+        <footer
+          className="mf-rise mf-d5"
           style={{
-            marginTop: 20,
-            borderRadius: 20,
-            border: "1px solid rgba(0,0,0,0.1)",
-            overflow: "hidden",
+            marginTop: 28,
+            paddingTop: 18,
+            borderTop: "1px solid rgba(0,0,0,0.08)",
+            textAlign: "center",
           }}
         >
-          {faqs.map((f, i) => (
-            <details
-              key={f.q}
-              className="mf-faq"
-              style={{
-                borderTop: i === 0 ? "none" : "1px solid rgba(0,0,0,0.08)",
-                padding: "0 16px",
-              }}
-            >
-              <summary
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: 12,
-                  padding: "14px 0",
-                  fontSize: 13.5,
-                  fontWeight: 700,
-                  color: "#0a0a0a",
-                }}
-              >
-                {f.q}
-                <svg
-                  className="mf-chev"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                  style={{ flexShrink: 0 }}
-                >
-                  <path d="M6 9l6 6 6-6" />
-                </svg>
-              </summary>
-              <p
-                style={{
-                  margin: 0,
-                  padding: "0 0 14px",
-                  fontSize: 12.5,
-                  lineHeight: 1.8,
-                  color: "#525252",
-                }}
-              >
-                {f.a}
-              </p>
-            </details>
-          ))}
-        </div>
+          <p
+            style={{
+              margin: "0 0 4px",
+              fontSize: 12,
+              fontWeight: 600,
+              color: "#4a4a4a",
+            }}
+          >
+            © {year} المافيا. جميع الحقوق محفوظة.
+          </p>
+          <p style={{ margin: 0, fontSize: 11, color: "#9a9a9a" }}>
+            صُنع بحب للعب مع الصحاب
+          </p>
+        </footer>
       </div>
     </main>
   );
