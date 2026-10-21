@@ -83,13 +83,6 @@ export default function SplashScreen() {
       >
         <source src="/splash.mp4" type="video/mp4" />
       </video>
-      <button
-        type="button"
-        onClick={finish}
-        className="absolute bottom-[max(1.5rem,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 px-4 py-2 text-xs text-[#ffffff] opacity-40 transition-opacity hover:opacity-80"
-      >
-        تخطي
-      </button>
     </div>
   );
 }
