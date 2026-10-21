@@ -3,10 +3,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "postinstall": "prisma generate",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "prisma generate && tsc --noEmit",
     "ship": "npm run typecheck && npm run build && git add . && git commit -m \"update\" && git push"
   },
   "dependencies": {
@@ -19,6 +20,7 @@
     "next": "16.2.6",
     "next-auth": "^5.0.0-beta.32",
     "pg": "^8.20.0",
+    "prisma": "^7.10.1",
     "react": "19.2.6",
     "react-dom": "19.2.6"
   },
@@ -32,7 +34,6 @@
     "eslint": "9.39.4",
     "eslint-config-next": "16.2.6",
     "postcss": "8.5.8",
-    "prisma": "^7.10.1",
     "tailwindcss": "4.1.17",
     "typescript": "5.9.3"
   }
