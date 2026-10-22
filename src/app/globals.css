@@ -173,8 +173,8 @@ button:focus-visible {
   --gold: #18181b;
   --text-0: #18181b;
   --text-1: #52525b;
-  --body-glow: rgba(0, 0, 0, 0.04);
-  --body-base: #fafafa;
+  --body-glow: transparent; /* ✏️ كان rgba(0, 0, 0, 0.04) */
+  --body-base: #ffffff;     /* ✏️ كان #fafafa */
   --scroll-thumb: rgba(0, 0, 0, 0.25);
   --town: #0f766e;
   --mafia: #b91c1c;

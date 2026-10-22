@@ -89,14 +89,14 @@ export default function HomeClient() {
         className={`mf-home relative isolate mx-auto flex h-[calc(100dvh-5rem)] w-full max-w-md flex-col justify-center overflow-hidden px-5 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] pt-3 md:max-w-xl md:px-8 lg:max-w-5xl lg:px-10 xl:max-w-6xl ${GAP}`}
         dir="rtl"
       >
-        {/* خلفية: شبكة نقط + توهّج خفيف أحمر */}
+        {/* خلفية: شبكة نقط بس (من غير توهّج) */}
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 -z-10"
           style={{
             backgroundImage:
-              "radial-gradient(ellipse 70% 38% at 50% 8%, rgba(239,68,68,0.14), transparent 70%), radial-gradient(rgba(255,255,255,0.07) 1px, transparent 1px)",
-            backgroundSize: "100% 100%, 22px 22px",
+              "radial-gradient(rgba(255,255,255,0.07) 1px, transparent 1px)",
+            backgroundSize: "22px 22px",
             WebkitMaskImage:
               "radial-gradient(ellipse 90% 70% at 50% 30%, #000 0%, transparent 85%)",
             maskImage:
