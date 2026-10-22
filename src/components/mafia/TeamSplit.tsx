@@ -8,26 +8,74 @@ export default function TeamSplit({
   label?: string;
 }) {
   return (
-    <div className="px-1" dir="rtl">
+    <div className="select-none px-1" dir="rtl">
+      <style>{`
+        @keyframes ts-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+        .ts-seg { animation: ts-grow .9s cubic-bezier(.22,1,.36,1) .15s both; }
+        @media (prefers-reduced-motion: reduce) { .ts-seg { animation: none; } }
+      `}</style>
+
       {label && (
-        <p className="mb-2.5 text-center text-[11px] font-medium tracking-wide text-[var(--text-1)]">
-          {label}
-        </p>
+        <div className="mb-3 flex items-center gap-3">
+          <span className="h-px flex-1 bg-gradient-to-l from-white/25 to-transparent" />
+          <span className="text-[11px] font-medium tracking-wide text-[var(--text-1)]">
+            {label}
+          </span>
+          <span className="h-px flex-1 bg-gradient-to-r from-white/25 to-transparent" />
+        </div>
       )}
-      <div className="mb-2 flex items-end justify-between">
+
+      <div className="mb-2.5 flex items-end justify-between">
         <span className="flex items-baseline gap-1.5 font-bold text-[var(--town)]">
-          <span className="text-2xl leading-none">{town}</span>
+          <span
+            className="text-[32px] font-extrabold leading-none tabular-nums"
+            style={{
+              textShadow: "0 0 18px color-mix(in srgb, var(--town) 40%, transparent)",
+            }}
+          >
+            {town}
+          </span>
           <span className="text-sm">صالحين</span>
         </span>
-        <span className="pb-0.5 text-[11px] text-[var(--text-1)]">ضد</span>
+
+        <span className="mb-0.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-[10px] font-semibold text-[var(--text-1)]">
+          ضد
+        </span>
+
         <span className="flex items-baseline gap-1.5 font-bold text-[var(--mafia)]">
-          <span className="text-2xl leading-none">{mafia}</span>
+          <span
+            className="text-[32px] font-extrabold leading-none tabular-nums"
+            style={{
+              textShadow: "0 0 18px color-mix(in srgb, var(--mafia) 40%, transparent)",
+            }}
+          >
+            {mafia}
+          </span>
           <span className="text-sm">مافيا</span>
         </span>
       </div>
+
       <div className="flex h-2 gap-1">
-        <div className="rounded-full bg-[var(--town)]" style={{ flex: town }} />
-        <div className="rounded-full bg-[var(--mafia)]" style={{ flex: mafia }} />
+        <div
+          className="ts-seg rounded-full"
+          style={{
+            flex: town,
+            transformOrigin: "right",
+            background:
+              "linear-gradient(270deg, var(--town), color-mix(in srgb, var(--town) 70%, black))",
+            boxShadow: "0 0 14px color-mix(in srgb, var(--town) 40%, transparent)",
+          }}
+        />
+        <div
+          className="ts-seg rounded-full"
+          style={{
+            flex: mafia,
+            transformOrigin: "left",
+            background:
+              "linear-gradient(90deg, var(--mafia), color-mix(in srgb, var(--mafia) 70%, black))",
+            boxShadow: "0 0 14px color-mix(in srgb, var(--mafia) 40%, transparent)",
+          }}
+        />
       </div>
     </div>
   );

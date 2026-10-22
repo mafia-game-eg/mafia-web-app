@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import HeroCarousel from "@/components/mafia/HeroCarousel";
 import { useRouter } from "next/navigation";
 
-import { ArrowLeft, DoorOpen, Home } from "lucide-react";
+import { ArrowLeft, BookOpen, DoorOpen, Home } from "lucide-react";
 import { api } from "@/lib/client/api";
 import { listSessions } from "@/lib/client/storage";
 import HowToPlayModal from "@/components/mafia/HowToPlayModal";
@@ -43,11 +43,35 @@ export default function HomeClient() {
 
   return (
     <>
+      {/* منع السكرول في الصفحة الرئيسية بس */}
+      <style>{`
+        html:has(.mf-home), body:has(.mf-home) {
+          height: 100%;
+          overflow: hidden;
+          overscroll-behavior: none;
+        }
+      `}</style>
+
       <Navbar onOpenHowTo={() => setShowHowTo(true)} onProfileChange={() => {}} />
       <main
-        className="mx-auto flex min-h-[calc(100dvh-5rem)] max-w-md flex-col gap-5 px-5 pb-8 pt-3"
+        className="mf-home relative isolate mx-auto flex h-[calc(100dvh-5rem)] max-w-md flex-col justify-center gap-[clamp(12px,2.4dvh,22px)] overflow-hidden px-5 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] pt-3"
         dir="rtl"
       >
+        {/* خلفية: شبكة نقط + توهّج خفيف أحمر/أبيض */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 -z-10"
+          style={{
+            backgroundImage:
+              "radial-gradient(ellipse 70% 38% at 50% 8%, rgba(239,68,68,0.14), transparent 70%), radial-gradient(rgba(255,255,255,0.07) 1px, transparent 1px)",
+            backgroundSize: "100% 100%, 22px 22px",
+            WebkitMaskImage:
+              "radial-gradient(ellipse 90% 70% at 50% 30%, #000 0%, transparent 85%)",
+            maskImage:
+              "radial-gradient(ellipse 90% 70% at 50% 30%, #000 0%, transparent 85%)",
+          }}
+        />
+
         {activeRoom && (
           <button
             onClick={() => router.push(`/room/${activeRoom.roomCode}`)}
@@ -101,6 +125,15 @@ export default function HomeClient() {
             onClick={() => router.push("/join")}
           />
         </div>
+
+        {/* زرار شرح اللعبة */}
+        <button
+          onClick={() => setShowHowTo(true)}
+          className="mx-auto flex animate-fade-in-up items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-semibold text-[var(--text-1)] transition-all duration-200 hover:bg-white/[0.08] active:scale-95"
+        >
+          <BookOpen className="h-4 w-4" strokeWidth={2} />
+          أول مرة تلعب؟ تعلّم اللعبة
+        </button>
 
         {showHowTo && <HowToPlayModal onClose={() => setShowHowTo(false)} />}
       </main>
