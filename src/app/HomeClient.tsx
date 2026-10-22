@@ -28,6 +28,8 @@ const phases = [
   { title: "التصويت", desc: "إعدام مشتبه", icon: Vote },
 ];
 
+const GAP = "gap-[clamp(10px,2.2dvh,20px)]";
+
 export default function HomeClient() {
   const router = useRouter();
   const [showHowTo, setShowHowTo] = useState(false);
@@ -59,18 +61,32 @@ export default function HomeClient() {
 
   return (
     <>
-      {/* منع السكرول في الصفحة الرئيسية بس */}
       <style>{`
-        html:has(.mf-home), body:has(.mf-home) {
-          height: 100%;
-          overflow: hidden;
-          overscroll-behavior: none;
+        /* من غير سكرول في الصفحة الرئيسية (لما الشاشة طولها كفاية) */
+        @media (min-height: 561px) {
+          html:has(.mf-home), body:has(.mf-home) {
+            height: 100%;
+            overflow: hidden;
+            overscroll-behavior: none;
+          }
+        }
+        /* شاشة قصيرة جدًا (موبايل أفقي مثلًا): نسمح بالسكرول عشان مفيش حاجة تتقصّ */
+        @media (max-height: 560px) {
+          .mf-home {
+            height: auto !important;
+            min-height: calc(100dvh - 5rem);
+            overflow: visible !important;
+          }
+        }
+        /* شريط الدورة بيختفي في الموبايل/التابلت القصير بس */
+        @media (max-height: 700px) and (max-width: 1023px) {
+          .mf-phases { display: none; }
         }
       `}</style>
 
       <Navbar onOpenHowTo={() => setShowHowTo(true)} onProfileChange={() => {}} />
       <main
-        className="mf-home relative isolate mx-auto flex h-[calc(100dvh-5rem)] max-w-md flex-col justify-center gap-[clamp(10px,2.2dvh,20px)] overflow-hidden px-5 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] pt-3"
+        className={`mf-home relative isolate mx-auto flex h-[calc(100dvh-5rem)] w-full max-w-md flex-col justify-center overflow-hidden px-5 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] pt-3 md:max-w-xl md:px-8 lg:max-w-5xl lg:px-10 xl:max-w-6xl ${GAP}`}
         dir="rtl"
       >
         {/* خلفية: شبكة نقط + توهّج خفيف أحمر */}
@@ -91,7 +107,7 @@ export default function HomeClient() {
         {activeRoom && (
           <button
             onClick={() => router.push(`/room/${activeRoom.roomCode}`)}
-            className="flex animate-fade-in-up items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[var(--bg-1)] px-4 py-3 text-right shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98]"
+            className="flex w-full animate-fade-in-up items-center justify-between gap-3 self-center rounded-2xl border border-white/10 bg-[var(--bg-1)] px-4 py-3 text-right shadow-sm transition-all duration-200 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 active:scale-[0.98] lg:max-w-md"
           >
             <span className="flex items-center gap-3">
               <span className="relative flex h-2.5 w-2.5">
@@ -114,74 +130,81 @@ export default function HomeClient() {
           </button>
         )}
 
-        <div className="animate-fade-in-up text-center">
-          <h1 className="sr-only">المافيا</h1>
-          {/* الهامش السالب يخلي الكاروسيل يطلع بنفس عرض الخط اللي تحته */}
-          <div className="-mx-2.5">
-            <HeroCarousel />
+        {/* موبايل/تابلت: عمود واحد — لابتوب/تابلت أفقي: عمودين (الكاروسيل | باقي المحتوى) */}
+        <div className={`grid grid-cols-1 lg:grid-cols-2 lg:items-center lg:gap-14 xl:gap-20 ${GAP}`}>
+          <div className="animate-fade-in-up text-center">
+            <h1 className="sr-only">المافيا</h1>
+            {/* الهامش السالب يخلي الكاروسيل يطلع بنفس عرض الخط اللي تحته */}
+            <div className="-mx-2.5 lg:mx-0">
+              <HeroCarousel />
+            </div>
+          </div>
+
+          <div className={`flex flex-col ${GAP}`}>
+            <div className="animate-fade-in-up">
+              <TeamSplit town={11} mafia={3} label="التشكيلة المثالية · 14 لاعب" />
+            </div>
+
+            <div className="grid animate-fade-in-up grid-cols-2 gap-3 md:gap-4">
+              <ImageButton
+                title="إنشاء غرفة"
+                subtitle="ابدأ لعبة جديدة"
+                icon={<Home strokeWidth={2} />}
+                plus
+                onClick={() => router.push("/create")}
+              />
+              <ImageButton
+                title="دخول غرفة"
+                subtitle="معاك كود الغرفة؟"
+                icon={<DoorOpen strokeWidth={2} />}
+                onClick={() => router.push("/join")}
+              />
+            </div>
+
+            {/* دورة اللعبة */}
+            <div
+              className="mf-phases animate-fade-in-up rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2.5 md:px-5 md:py-3"
+              aria-label="دورة اللعبة"
+            >
+              <ol className="flex items-center justify-between">
+                {phases.map((p, i) => {
+                  const Icon = p.icon;
+                  return (
+                    <li key={p.title} className="flex flex-1 items-center">
+                      <div className="flex flex-1 flex-col items-center gap-1 text-center">
+                        <span className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-white md:h-9 md:w-9">
+                          <Icon className="h-4 w-4 md:h-[18px] md:w-[18px]" strokeWidth={2} />
+                        </span>
+                        <span className="text-[12px] font-bold leading-none md:text-[13px]">
+                          {p.title}
+                        </span>
+                        <span className="text-[10px] leading-none text-[var(--text-1)] md:text-[11px]">
+                          {p.desc}
+                        </span>
+                      </div>
+                      {i < phases.length - 1 && (
+                        <ChevronLeft
+                          className="h-4 w-4 shrink-0 text-white/25"
+                          strokeWidth={2}
+                          aria-hidden="true"
+                        />
+                      )}
+                    </li>
+                  );
+                })}
+              </ol>
+            </div>
+
+            {/* زرار شرح اللعبة */}
+            <button
+              onClick={() => setShowHowTo(true)}
+              className="mx-auto flex animate-fade-in-up items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-semibold text-[var(--text-1)] transition-all duration-200 hover:bg-white/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 active:scale-95"
+            >
+              <BookOpen className="h-4 w-4" strokeWidth={2} />
+              أول مرة تلعب؟ تعلّم اللعبة
+            </button>
           </div>
         </div>
-
-        <div className="animate-fade-in-up">
-          <TeamSplit town={11} mafia={3} label="التشكيلة المثالية · 14 لاعب" />
-        </div>
-
-        <div className="grid animate-fade-in-up grid-cols-2 gap-3">
-          <ImageButton
-            title="إنشاء غرفة"
-            subtitle="ابدأ لعبة جديدة"
-            icon={<Home strokeWidth={2} />}
-            plus
-            onClick={() => router.push("/create")}
-          />
-          <ImageButton
-            title="دخول غرفة"
-            subtitle="معاك كود الغرفة؟"
-            icon={<DoorOpen strokeWidth={2} />}
-            onClick={() => router.push("/join")}
-          />
-        </div>
-
-        {/* دورة اللعبة (بتختفي في الشاشات القصيرة عشان مفيش سكرول) */}
-        <div
-          className="animate-fade-in-up rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2.5 [@media(max-height:700px)]:hidden"
-          aria-label="دورة اللعبة"
-        >
-          <ol className="flex items-center justify-between">
-            {phases.map((p, i) => {
-              const Icon = p.icon;
-              return (
-                <li key={p.title} className="flex flex-1 items-center">
-                  <div className="flex flex-1 flex-col items-center gap-1 text-center">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-white">
-                      <Icon className="h-4 w-4" strokeWidth={2} />
-                    </span>
-                    <span className="text-[12px] font-bold leading-none">{p.title}</span>
-                    <span className="text-[10px] leading-none text-[var(--text-1)]">
-                      {p.desc}
-                    </span>
-                  </div>
-                  {i < phases.length - 1 && (
-                    <ChevronLeft
-                      className="h-4 w-4 shrink-0 text-white/25"
-                      strokeWidth={2}
-                      aria-hidden="true"
-                    />
-                  )}
-                </li>
-              );
-            })}
-          </ol>
-        </div>
-
-        {/* زرار شرح اللعبة */}
-        <button
-          onClick={() => setShowHowTo(true)}
-          className="mx-auto flex animate-fade-in-up items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-semibold text-[var(--text-1)] transition-all duration-200 hover:bg-white/[0.08] active:scale-95"
-        >
-          <BookOpen className="h-4 w-4" strokeWidth={2} />
-          أول مرة تلعب؟ تعلّم اللعبة
-        </button>
 
         {showHowTo && <HowToPlayModal onClose={() => setShowHowTo(false)} />}
       </main>
