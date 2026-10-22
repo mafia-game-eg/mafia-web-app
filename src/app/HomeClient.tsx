@@ -4,13 +4,29 @@ import { useEffect, useState } from "react";
 import HeroCarousel from "@/components/mafia/HeroCarousel";
 import { useRouter } from "next/navigation";
 
-import { ArrowLeft, BookOpen, DoorOpen, Home } from "lucide-react";
+import {
+  ArrowLeft,
+  BookOpen,
+  ChevronLeft,
+  DoorOpen,
+  Home,
+  Moon,
+  Sun,
+  Vote,
+} from "lucide-react";
 import { api } from "@/lib/client/api";
 import { listSessions } from "@/lib/client/storage";
 import HowToPlayModal from "@/components/mafia/HowToPlayModal";
 import Navbar from "@/components/mafia/Navbar";
 import ImageButton from "@/components/mafia/ImageButton";
 import TeamSplit from "@/components/mafia/TeamSplit";
+
+// دورة اللعبة: ليل ← نهار ← تصويت
+const phases = [
+  { title: "الليل", desc: "المافيا تضرب", icon: Moon },
+  { title: "النهار", desc: "نقاش واتهامات", icon: Sun },
+  { title: "التصويت", desc: "إعدام مشتبه", icon: Vote },
+];
 
 export default function HomeClient() {
   const router = useRouter();
@@ -54,10 +70,10 @@ export default function HomeClient() {
 
       <Navbar onOpenHowTo={() => setShowHowTo(true)} onProfileChange={() => {}} />
       <main
-        className="mf-home relative isolate mx-auto flex h-[calc(100dvh-5rem)] max-w-md flex-col justify-center gap-[clamp(12px,2.4dvh,22px)] overflow-hidden px-5 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] pt-3"
+        className="mf-home relative isolate mx-auto flex h-[calc(100dvh-5rem)] max-w-md flex-col justify-center gap-[clamp(10px,2.2dvh,20px)] overflow-hidden px-5 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] pt-3"
         dir="rtl"
       >
-        {/* خلفية: شبكة نقط + توهّج خفيف أحمر/أبيض */}
+        {/* خلفية: شبكة نقط + توهّج خفيف أحمر */}
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 -z-10"
@@ -124,6 +140,38 @@ export default function HomeClient() {
             icon={<DoorOpen strokeWidth={2} />}
             onClick={() => router.push("/join")}
           />
+        </div>
+
+        {/* دورة اللعبة (بتختفي في الشاشات القصيرة عشان مفيش سكرول) */}
+        <div
+          className="animate-fade-in-up rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2.5 [@media(max-height:700px)]:hidden"
+          aria-label="دورة اللعبة"
+        >
+          <ol className="flex items-center justify-between">
+            {phases.map((p, i) => {
+              const Icon = p.icon;
+              return (
+                <li key={p.title} className="flex flex-1 items-center">
+                  <div className="flex flex-1 flex-col items-center gap-1 text-center">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-white">
+                      <Icon className="h-4 w-4" strokeWidth={2} />
+                    </span>
+                    <span className="text-[12px] font-bold leading-none">{p.title}</span>
+                    <span className="text-[10px] leading-none text-[var(--text-1)]">
+                      {p.desc}
+                    </span>
+                  </div>
+                  {i < phases.length - 1 && (
+                    <ChevronLeft
+                      className="h-4 w-4 shrink-0 text-white/25"
+                      strokeWidth={2}
+                      aria-hidden="true"
+                    />
+                  )}
+                </li>
+              );
+            })}
+          </ol>
         </div>
 
         {/* زرار شرح اللعبة */}
