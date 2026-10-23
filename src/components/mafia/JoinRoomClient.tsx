@@ -10,6 +10,10 @@ import Navbar from "@/components/mafia/Navbar";
 import { loadProfile, shrinkAvatar } from "@/lib/client/profile";
 
 const NAME_REQUIRED_MSG = "اكتب اسمك أولًا من الصورة الشخصية أعلى الشاشة.";
+const CODE_LENGTH = 5;
+
+const focusRing =
+  "outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-0";
 
 export default function JoinRoomClient() {
   const router = useRouter();
@@ -25,6 +29,7 @@ export default function JoinRoomClient() {
   }, []);
 
   async function handleJoin() {
+    if (loading) return;
     setError("");
     if (!name.trim()) {
       setError(NAME_REQUIRED_MSG);
@@ -55,65 +60,87 @@ export default function JoinRoomClient() {
     router.push(`/room/${res.roomCode}`);
   }
 
-  const goldBtn =
-    "flex items-center justify-center gap-2 rounded-2xl border border-white/20 bg-transparent px-4 py-4 text-lg font-bold text-white transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-white/60 hover:bg-white/10 active:translate-y-0 active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50 motion-reduce:transition-none";
-
-  const backBtn =
-    "flex items-center justify-center gap-1.5 py-1 text-sm text-[var(--text-1)] transition-colors duration-200 hover:text-white";
+  const primaryBtn =
+    "flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-4 py-4 text-lg font-bold text-black shadow-md shadow-white/10 transition-all duration-200 ease-out hover:bg-white/90 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 motion-reduce:transition-none";
 
   const inputBase =
-    "w-full rounded-xl border border-white/15 bg-[var(--bg-0)] px-4 py-3 outline-none transition-all duration-200 focus:border-white/60 focus:bg-[var(--bg-0)] focus:ring-2 focus:ring-white/20";
+    "w-full rounded-xl border border-white/15 bg-[var(--bg-0)] px-4 py-3 outline-none transition-colors duration-200 focus:border-white/60 focus:ring-2 focus:ring-white/20";
 
   return (
     <>
       <Navbar onOpenHowTo={() => setShowHowTo(true)} onProfileChange={(p) => setName(p.name)} />
-      <main className="mx-auto flex max-w-md flex-col gap-5 px-5 pb-8 pt-4" dir="rtl">
+
+      {/* نفس عرض الـ Navbar: موبايل / تابلت / ديسكتوب */}
+      <main
+        className="mx-auto w-full max-w-md px-4 pb-8 pt-4 md:max-w-2xl md:px-6 md:pt-6 lg:max-w-5xl lg:px-8"
+        dir="rtl"
+      >
         <header className="flex animate-fade-in-up items-center gap-3">
-          <span className="flex h-12 w-12 items-center justify-center rounded-full border border-white/20 bg-[var(--bg-1)]">
-            <DoorOpen className="h-6 w-6" strokeWidth={2} />
-          </span>
-          <div>
-            <h1 className="text-xl font-extrabold">دخول غرفة</h1>
-            <p className="text-xs text-[var(--text-1)]">اكتب الكود اللي وصلك من صاحب الغرفة</p>
+          <button
+            type="button"
+            aria-label="رجوع"
+            onClick={() => router.push("/")}
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/[0.04] transition-all duration-200 hover:bg-white/10 active:scale-90 ${focusRing}`}
+          >
+            <ArrowRight className="h-5 w-5" />
+          </button>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl font-extrabold md:text-2xl">دخول غرفة</h1>
+            <p className="text-xs text-[var(--text-1)] md:text-sm">اكتب الكود اللي وصلك من صاحب الغرفة</p>
           </div>
         </header>
 
-        <div className="animate-fade-in-up rounded-3xl border border-white/10 bg-[var(--bg-1)] p-5 shadow-sm backdrop-blur">
-          <div className="flex flex-col gap-3">
-            <label className="mb-1 block text-xs text-[var(--text-1)]">كود الغرفة</label>
-            <input
-              value={roomCode}
-              onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-              maxLength={5}
-              placeholder="XXXXX"
-              autoFocus
-              className={`${inputBase} text-center text-2xl font-extrabold tracking-[0.4em]`}
-            />
-            <button disabled={loading} onClick={handleJoin} className={`mt-2 ${goldBtn}`}>
-              {loading ? (
-                <>
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  جارِ الدخول...
-                </>
-              ) : (
-                <>
-                  <DoorOpen className="h-5 w-5" />
-                  دخول
-                </>
-              )}
-            </button>
-            <button onClick={() => router.push("/")} className={backBtn}>
-              <ArrowRight className="h-4 w-4" />
-              رجوع
-            </button>
-          </div>
-        </div>
+        {/* الكارت في النص على التابلت والديسكتوب */}
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleJoin();
+          }}
+          className="mx-auto mt-5 w-full max-w-md rounded-3xl border border-white/10 bg-[var(--bg-1)] p-5 md:mt-8 md:p-6"
+        >
+          <label htmlFor="room-code" className="mb-2 block text-xs text-[var(--text-1)]">
+            كود الغرفة
+          </label>
+          <input
+            id="room-code"
+            value={roomCode}
+            onChange={(e) =>
+              setRoomCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))
+            }
+            dir="ltr"
+            maxLength={CODE_LENGTH}
+            placeholder="XXXXX"
+            autoFocus
+            autoComplete="off"
+            autoCapitalize="characters"
+            autoCorrect="off"
+            spellCheck={false}
+            className={`${inputBase} text-center text-2xl font-extrabold tracking-[0.4em] md:text-3xl`}
+          />
 
-        {error && (
-          <p className="animate-fade-in-up rounded-xl bg-red-500/15 px-3 py-2 text-center text-sm text-red-300">
-            {error}
-          </p>
-        )}
+          {error && (
+            <p
+              role="alert"
+              className="mt-3 rounded-xl bg-red-500/15 px-3 py-2 text-center text-sm text-red-300"
+            >
+              {error}
+            </p>
+          )}
+
+          <button type="submit" disabled={loading} className={`mt-4 ${primaryBtn}`}>
+            {loading ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin" />
+                جارِ الدخول...
+              </>
+            ) : (
+              <>
+                <DoorOpen className="h-5 w-5" />
+                دخول
+              </>
+            )}
+          </button>
+        </form>
 
         {showHowTo && <HowToPlayModal onClose={() => setShowHowTo(false)} />}
       </main>

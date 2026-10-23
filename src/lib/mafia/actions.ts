@@ -11,9 +11,14 @@ import {
   pushSystemChat,
   resetRoomToLobby,
   startGameFlow,
+  tickRoom,
 } from "./engine";
 
 export class GameError extends Error {}
+
+// ✏️ الحد الأدنى للاعبين (كان 5 مكتوب في مكانين)
+export const MIN_PLAYERS = 4;
+export const MAX_PLAYERS = 20;
 
 function sanitizeAvatar(v: unknown): string | null {
   if (typeof v !== "string" || !v) return null;
@@ -63,7 +68,7 @@ export function createRoom(input: {
   }
 
   const settings: RoomSettings = {
-    maxPlayers: clamp(Math.round(input.maxPlayers), 5, 20),
+    maxPlayers: clamp(Math.round(input.maxPlayers) || 8, MIN_PLAYERS, MAX_PLAYERS), // ✏️
     revealRoleOnDeath: !!input.revealRoleOnDeath,
     questionPairs: clamp(Math.round(input.questionPairs) || 3, 1, 8),
     revoteOnTie: input.revoteOnTie !== false,
@@ -185,6 +190,13 @@ export function touchPlayer(roomCode: string, playerId: string, token: string): 
   const room = getRoom(roomCode);
   if (!room) throw new GameError("الغرفة لم تعد موجودة، ربما انتهت صلاحيتها.");
   requirePlayer(room, playerId, token);
+  // ✏️ كل طلب state بيحرّك الوقت كمان، فاللعبة ما بتقفش لو الـ setInterval اتوقف
+  // (tickRoom آمن لو اتنادى أكتر من مرة لأنه بيقارن بالوقت الحالي).
+  try {
+    tickRoom(room);
+  } catch {
+    /* تجاهل: الـ view لسه يتبني من آخر حالة سليمة */
+  }
   return room;
 }
 
@@ -213,7 +225,9 @@ export function startGameNow(room: Room, hostId: string, hostToken: string): Roo
   if (room.hostId !== host.id) throw new GameError("فقط المضيف يمكنه بدء اللعبة.");
   if (room.phase !== "lobby") throw new GameError("اللعبة بدأت بالفعل.");
   const active = activePlayers(room);
-  if (active.length < 5) throw new GameError("تحتاج 5 لاعبين على الأقل لبدء اللعبة.");
+  if (active.length < MIN_PLAYERS) {
+    throw new GameError(`تحتاج ${MIN_PLAYERS} لاعبين على الأقل لبدء اللعبة.`); // ✏️
+  }
   startGameFlow(room);
   return room;
 }

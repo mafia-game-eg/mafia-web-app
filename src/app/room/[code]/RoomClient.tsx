@@ -32,6 +32,8 @@ import Avatar from "@/components/mafia/Avatar";
 import { loadProfile, shrinkAvatar } from "@/lib/client/profile";
 
 const POLL_MS = 1400;
+const MIN_TO_START = 4; // ✏️ جديد: الحد الأدنى لبدء اللعبة (كان 5 مكتوبة في أكتر من مكان)
+const MAX_POLL_FAILS = 4; // ✏️ جديد: عدد الفشلات المتتالية قبل ما نعرض شاشة الخطأ
 
 export default function RoomClient({ roomCode }: { roomCode: string }) {
   const router = useRouter();
@@ -48,6 +50,7 @@ export default function RoomClient({ roomCode }: { roomCode: string }) {
   const [tick, setTick] = useState(0);
   const clockOffsetRef = useRef(0);
   const prevPhaseRef = useRef<string | null>(null);
+  const failRef = useRef(0); // ✏️ جديد: عدّاد فشل الـ polling المتتالي
   const [textInput, setTextInput] = useState("");
 
   useEffect(() => {
@@ -63,13 +66,16 @@ export default function RoomClient({ roomCode }: { roomCode: string }) {
     return () => clearInterval(t);
   }, []);
 
+  // ✏️ اتعدلت: الخطأ المؤقت ما بيطردش اللاعب إلا بعد MAX_POLL_FAILS فشلات ورا بعض
   const poll = useCallback(async () => {
     if (!session) return;
     const res = await api.state(roomCode, session.playerId, session.token);
     if (!res.ok) {
-      setFatalError(res.error);
+      failRef.current += 1;
+      if (failRef.current >= MAX_POLL_FAILS) setFatalError(res.error);
       return;
     }
+    failRef.current = 0;
     if (res.view) {
       clockOffsetRef.current = res.view.serverNow - Date.now();
       setView(res.view);
@@ -229,7 +235,8 @@ export default function RoomClient({ roomCode }: { roomCode: string }) {
   if (!session) {
     return (
       <Screen>
-        <div className="w-full max-w-sm rounded-3xl border border-white/10 bg-white/[0.03] p-6 text-center shadow-2xl">[]
+        {/* ✏️ اتشال "[]" الزايدة اللي كانت بتظهر كنص في أول الكارت */}
+        <div className="w-full max-w-sm rounded-3xl border border-white/10 bg-white/[0.03] p-6 text-center shadow-2xl">
           <h1 className="mb-1 text-lg font-bold text-[var(--gold)]">الانضمام للغرفة</h1>
           <p className="mb-4 text-sm text-[var(--text-1)]">كود الغرفة: {roomCode}</p>
           <input
@@ -271,6 +278,8 @@ export default function RoomClient({ roomCode }: { roomCode: string }) {
         onHowTo={() => setShowHowTo(true)}
         onLeave={leaveToHome}
         isHost={me.isHost}
+        // ✏️ زرار "دوري" متاح في الهيدر بعد بدء اللعبة (مش بس بالليل)
+        onOpenRole={me.roleInfo && room.phase !== "lobby" ? () => setShowRoleModal(true) : undefined}
       />
 
       {!me.alive && room.phase !== "lobby" && room.phase !== "role_reveal" && room.phase !== "game_over" && (
@@ -355,6 +364,28 @@ export default function RoomClient({ roomCode }: { roomCode: string }) {
               team={me.roleInfo.team}
               mafiaTeammates={me.mafiaTeammates}
             />
+            {/* ✏️ نتائج المحقق: كانت بتتبعت من السيرفر لكن مش بتتعرض في أي مكان */}
+            {me.role === "detective" && (
+              <div className="mx-auto mt-4 w-full max-w-xs rounded-2xl border border-white/10 bg-black/40 p-3 text-right text-sm">
+                <p className="mb-2 font-bold text-[var(--gold)]">🕵️ نتائج تحقيقاتك</p>
+                {me.investigations.length === 0 ? (
+                  <p className="text-xs text-[var(--text-1)]">لم تحقق مع أحد بعد.</p>
+                ) : (
+                  <ul className="space-y-1">
+                    {me.investigations.map((inv) => (
+                      <li key={`${inv.night}-${inv.targetId}`} className="flex items-center justify-between gap-2">
+                        <span>
+                          الليلة {inv.night}: {inv.targetName}
+                        </span>
+                        <span className={inv.isMafia ? "text-red-300" : "text-teal-300"}>
+                          {inv.isMafia ? "مافيا 🔪" : "ليس مافيا ✅"}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
             <p className="mt-4 text-center text-xs text-[var(--text-1)]">اضغط في أي مكان للإغلاق</p>
           </div>
         </div>
@@ -378,6 +409,7 @@ function Header({
   onHowTo,
   onLeave,
   isHost,
+  onOpenRole,
 }: {
   roomCode: string;
   muted: boolean;
@@ -385,6 +417,7 @@ function Header({
   onHowTo: () => void;
   onLeave: () => void;
   isHost: boolean;
+  onOpenRole?: () => void;
 }) {
   const iconBtn =
     "flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 text-[var(--text-1)] hover:bg-white/10 hover:text-white";
@@ -401,6 +434,11 @@ function Header({
         )}
       </div>
       <div className="flex items-center gap-2">
+        {onOpenRole && (
+          <button onClick={onOpenRole} className={iconBtn} aria-label="دوري">
+            <Eye className="h-4 w-4" />
+          </button>
+        )}
         <button onClick={onToggleMute} className={iconBtn} aria-label="الصوت">
           {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
         </button>
@@ -481,11 +519,11 @@ function LobbyView({
 
       {me.isHost && (
         <button
-          disabled={activeCount < 5}
+          disabled={activeCount < MIN_TO_START}
           onClick={() => runAction(() => api.start(room.code, session.playerId, session.token))}
           className="w-full rounded-2xl bg-gradient-to-l from-[var(--accent)] to-[var(--accent-2)] px-4 py-4 text-lg font-bold shadow-lg disabled:opacity-40"
         >
-          {activeCount < 5 ? "تحتاج 5 لاعبين على الأقل" : "ابدأ اللعبة الآن"}
+          {activeCount < MIN_TO_START ? `تحتاج ${MIN_TO_START} لاعبين على الأقل` : "ابدأ اللعبة الآن"}
         </button>
       )}
       {!me.isHost && (
@@ -556,8 +594,10 @@ function NightView({
   const { room, night, me } = view;
   if (!night) return null;
   const canAct = me.alive;
+  // ✏️ زرار "تخطّي" بيظهر لكل اللاعبين في مرحلة القناص (مش للقناص بس)،
+  // عشان وجوده على شاشة واحد بس ما يكشفش إنه القناص. السيرفر بيتجاهله لو مش قناص.
   const extraOption =
-    room.nightSubPhase === "extra" && me.role === "sniper" && !night.isSniperWithShotUsed
+    room.nightSubPhase === "extra" && night.extraRoleType === "sniper"
       ? { id: "skip", label: "⏭️ تخطّي (لا تطلق)" }
       : undefined;
   return (

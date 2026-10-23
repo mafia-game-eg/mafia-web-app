@@ -86,28 +86,13 @@ export default function HomeClient() {
 
       <Navbar onOpenHowTo={() => setShowHowTo(true)} onProfileChange={() => {}} />
       <main
-        className={`mf-home relative isolate mx-auto flex h-[calc(100dvh-5rem)] w-full max-w-md flex-col justify-center overflow-hidden px-5 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] pt-3 md:max-w-xl md:px-8 lg:max-w-5xl lg:px-10 xl:max-w-6xl ${GAP}`}
+        className={`mf-home mx-auto flex h-[calc(100dvh-5rem)] w-full max-w-md flex-col justify-center overflow-hidden px-5 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] pt-3 md:max-w-xl md:px-8 lg:max-w-5xl lg:px-10 xl:max-w-6xl ${GAP}`}
         dir="rtl"
       >
-        {/* خلفية: شبكة نقط بس (من غير توهّج) */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 -z-10"
-          style={{
-            backgroundImage:
-              "radial-gradient(rgba(255,255,255,0.07) 1px, transparent 1px)",
-            backgroundSize: "22px 22px",
-            WebkitMaskImage:
-              "radial-gradient(ellipse 90% 70% at 50% 30%, #000 0%, transparent 85%)",
-            maskImage:
-              "radial-gradient(ellipse 90% 70% at 50% 30%, #000 0%, transparent 85%)",
-          }}
-        />
-
         {activeRoom && (
           <button
             onClick={() => router.push(`/room/${activeRoom.roomCode}`)}
-            className="flex w-full animate-fade-in-up items-center justify-between gap-3 self-center rounded-2xl border border-white/10 bg-[var(--bg-1)] px-4 py-3 text-right shadow-sm transition-all duration-200 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 active:scale-[0.98] lg:max-w-md"
+            className="flex w-full animate-fade-in-up items-center justify-between gap-3 self-center rounded-2xl border border-white/10 bg-[var(--bg-1)] px-4 py-3 text-right transition-colors duration-200 hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 active:scale-[0.98] lg:max-w-md"
           >
             <span className="flex items-center gap-3">
               <span className="relative flex h-2.5 w-2.5">
@@ -198,7 +183,7 @@ export default function HomeClient() {
             {/* زرار شرح اللعبة */}
             <button
               onClick={() => setShowHowTo(true)}
-              className="mx-auto flex animate-fade-in-up items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-semibold text-[var(--text-1)] transition-all duration-200 hover:bg-white/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 active:scale-95"
+              className="mx-auto flex animate-fade-in-up items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-semibold text-[var(--text-1)] transition-colors duration-200 hover:bg-white/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 active:scale-95"
             >
               <BookOpen className="h-4 w-4" strokeWidth={2} />
               أول مرة تلعب؟ تعلّم اللعبة

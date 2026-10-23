@@ -10,7 +10,6 @@ import {
   LogOut,
   Mail,
   Trash2,
-  UserRound,
   Volume2,
   VolumeX,
   X,
@@ -21,6 +20,7 @@ import { fileToAvatar, loadProfile, saveProfile, type Profile } from "@/lib/clie
 import { isMuted, setMuted } from "@/lib/client/sound";
 
 const WELCOME_KEY = "mafia-welcome-seen";
+const MIN_USERNAME = 3;
 
 export default function Navbar({
   onOpenHowTo,
@@ -80,6 +80,17 @@ export default function Navbar({
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  // قفل سكرول الصفحة وإنت فاتح القايمة أو أي نافذة
+  const anyOpen = menuOpen || profileOpen || welcomeOpen;
+  useEffect(() => {
+    if (!anyOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [anyOpen]);
+
   function openProfile() {
     setDraftName(profile.name);
     setDraftAvatar(profile.avatar);
@@ -124,8 +135,8 @@ export default function Navbar({
 
   async function saveDraft() {
     const name = draftName.trim().toLowerCase();
-    if (!name) {
-      setError("اكتب اليوزر نيم أولًا من فضلك.");
+    if (name.length < MIN_USERNAME) {
+      setError(`اليوزر نيم لازم يكون ${MIN_USERNAME} حروف على الأقل.`);
       return;
     }
     setBusy(true);
@@ -160,24 +171,31 @@ export default function Navbar({
   }
 
   const menuItem =
-    "flex w-full items-center gap-3 rounded-xl px-3 py-3 text-right text-sm text-[var(--text-0)] hover:bg-white/5";
+    "flex w-full items-center gap-3 rounded-xl px-3 py-3 text-right text-sm text-[var(--text-0)] transition-colors hover:bg-white/5";
+
+  const modalBackdrop =
+    "fixed inset-0 flex items-center justify-center overflow-y-auto bg-black/80 p-4 backdrop-blur-sm";
+  const modalCard =
+    "animate-fade-in-up my-auto w-full max-w-sm rounded-3xl border border-white/10 bg-[var(--bg-1)] p-5 shadow-2xl md:max-w-md md:p-6";
 
   return (
     <>
       <header
         dir="rtl"
-        className="sticky top-0 z-40 border-b border-white/10 bg-black/60 backdrop-blur-md"
+        className="sticky top-0 z-40 border-b border-white/10 bg-black/60 pt-[env(safe-area-inset-top)] backdrop-blur-md"
       >
-        <div className="mx-auto grid h-24 max-w-md grid-cols-[1fr_auto_1fr] items-center px-5 pt-5">
+        {/* نفس عرض الصفحات: موبايل / تابلت / ديسكتوب */}
+        <div className="mx-auto grid h-16 max-w-md grid-cols-[1fr_auto_1fr] items-center px-4 md:h-20 md:max-w-2xl md:px-6 lg:max-w-5xl lg:px-8">
           {/* في RTL أول عنصر بيطلع على اليمين: زرار القايمة */}
           <button
             onClick={() => setMenuOpen(true)}
             aria-label="القائمة"
-            className="group flex h-11 w-11 flex-col justify-center justify-self-start gap-[6px] text-[var(--text-0)] transition-opacity duration-200 active:opacity-60"
+            aria-expanded={menuOpen}
+            className="flex h-11 w-11 flex-col justify-center justify-self-start gap-[6px] rounded-lg text-[var(--text-0)] outline-none transition-opacity duration-200 focus-visible:ring-2 focus-visible:ring-white/50 active:opacity-60"
           >
-            <span className="ml-auto block h-[2px] w-6 rounded-full bg-current transition-all duration-300" />
-            <span className="ml-auto block h-[2px] w-4 rounded-full bg-current transition-all duration-300 group-hover:w-6" />
-            <span className="ml-auto block h-[2px] w-5 rounded-full bg-current transition-all duration-300 group-hover:w-6" />
+            <span className="ml-auto block h-[2px] w-6 rounded-full bg-current" />
+            <span className="ml-auto block h-[2px] w-4 rounded-full bg-current" />
+            <span className="ml-auto block h-[2px] w-5 rounded-full bg-current" />
           </button>
 
           <div className="flex justify-center">
@@ -187,7 +205,7 @@ export default function Navbar({
               width={480}
               height={120}
               priority
-              className="logo-for-dark h-14 w-auto"
+              className="logo-for-dark h-10 w-auto md:h-12"
             />
             <Image
               src="/logo-nav-dark.png"
@@ -195,7 +213,7 @@ export default function Navbar({
               width={480}
               height={120}
               priority
-              className="logo-for-light h-14 w-auto"
+              className="logo-for-light h-10 w-auto md:h-12"
             />
           </div>
 
@@ -203,7 +221,7 @@ export default function Navbar({
           <button
             onClick={openProfile}
             aria-label="الملف الشخصي"
-            className="h-11 w-11 justify-self-end overflow-hidden rounded-full ring-1 ring-white/10 transition-transform duration-200 hover:scale-105 active:scale-95"
+            className="h-11 w-11 justify-self-end overflow-hidden rounded-full outline-none ring-1 ring-white/10 transition-transform duration-200 focus-visible:ring-2 focus-visible:ring-white/50 active:scale-95"
           >
             <Avatar name={profile.name} src={profile.avatar} size={44} />
           </button>
@@ -213,13 +231,14 @@ export default function Navbar({
       {/* القايمة الجانبية */}
       <div
         dir="rtl"
-        className={`fixed inset-0 z-50 transition-opacity duration-300 ${
-          menuOpen ? "opacity-100" : "pointer-events-none opacity-0"
+        aria-hidden={!menuOpen}
+        className={`fixed inset-0 z-50 transition-[opacity,visibility] duration-300 ${
+          menuOpen ? "visible opacity-100" : "invisible opacity-0"
         }`}
       >
         <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setMenuOpen(false)} />
         <aside
-          className={`absolute right-0 top-0 flex h-full w-72 max-w-[80%] flex-col border-l border-white/10 bg-[var(--bg-1)] p-5 shadow-2xl transition-transform duration-300 ease-out ${
+          className={`absolute right-0 top-0 flex h-full w-72 max-w-[85%] flex-col overflow-y-auto border-l border-white/10 bg-[var(--bg-1)] p-5 pt-[max(1.25rem,env(safe-area-inset-top))] shadow-2xl transition-transform duration-300 ease-out md:w-80 ${
             menuOpen ? "translate-x-0" : "translate-x-full"
           }`}
         >
@@ -236,7 +255,7 @@ export default function Navbar({
 
           <button
             onClick={openProfile}
-            className="mb-4 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-3 text-right hover:bg-white/5"
+            className="mb-4 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-3 text-right transition-colors hover:bg-white/5"
           >
             <Avatar name={profile.name} src={profile.avatar} size={52} />
             <span className="min-w-0">
@@ -248,10 +267,6 @@ export default function Navbar({
           </button>
 
           <nav className="flex flex-col gap-1">
-            <button onClick={openProfile} className={menuItem}>
-              <UserRound className="h-5 w-5 text-[var(--gold)]" />
-              الملف الشخصي
-            </button>
             <button
               onClick={() => {
                 setMenuOpen(false);
@@ -271,30 +286,18 @@ export default function Navbar({
               الصوت: {muted ? "مكتوم" : "شغّال"}
             </button>
             <ThemeToggle className={menuItem} />
-            <button
-              onClick={() => signOut({ callbackUrl: "/login" })}
-              className={menuItem}
-            >
+            <button onClick={() => signOut({ callbackUrl: "/login" })} className={`${menuItem} mt-2`}>
               <LogOut className="h-5 w-5 text-red-400" />
               تسجيل الخروج
             </button>
           </nav>
-
-          <p className="mt-auto text-center text-xs text-[var(--text-1)]/60">لعبة المافيا</p>
         </aside>
       </div>
 
       {/* نافذة الملف الشخصي */}
       {profileOpen && (
-        <div
-          dir="rtl"
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
-          onClick={() => setProfileOpen(false)}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="animate-fade-in-up w-full max-w-sm rounded-3xl border border-white/10 bg-[var(--bg-1)] p-6 shadow-2xl"
-          >
+        <div dir="rtl" className={`${modalBackdrop} z-[60]`} onClick={() => setProfileOpen(false)}>
+          <div onClick={(e) => e.stopPropagation()} className={modalCard}>
             <div className="mb-5 flex items-center justify-between">
               <h2 className="text-lg font-bold text-[var(--gold)]">الملف الشخصي</h2>
               <button
@@ -345,30 +348,29 @@ export default function Navbar({
               className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-left outline-none transition focus:border-[var(--gold)]/60 focus:ring-2 focus:ring-[var(--gold)]/30"
             />
             <p className="mt-1.5 text-xs text-[var(--text-1)]/80">
-              حروف إنجليزي صغيرة وأرقام و _ بس (من 3 لـ 20). أصحابك هيضيفوك بيه.
+              حروف إنجليزي صغيرة وأرقام و _ بس (من {MIN_USERNAME} لـ 20). أصحابك هيضيفوك بيه.
             </p>
 
             {email && (
               <div className="mt-4">
-                <label className="mb-1.5 block text-xs text-[var(--text-1)]">الإيميل</label>
+                <label className="mb-1.5 block text-xs text-[var(--text-1)]">الإيميل (ظاهر ليك إنت بس)</label>
                 <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-[var(--text-1)]">
                   <Mail className="h-4 w-4 shrink-0" />
                   <span className="truncate" dir="ltr">{email}</span>
                 </div>
-                <p className="mt-1.5 text-xs text-[var(--text-1)]/80">
-                  الإيميل ده ظاهر ليك إنت بس، ومحدش من اللاعبين بيشوفه.
-                </p>
               </div>
             )}
 
             {error && (
-              <p className="mt-3 rounded-xl bg-red-500/15 px-3 py-2 text-center text-sm text-red-300">{error}</p>
+              <p role="alert" className="mt-3 rounded-xl bg-red-500/15 px-3 py-2 text-center text-sm text-red-300">
+                {error}
+              </p>
             )}
 
             <button
               onClick={saveDraft}
               disabled={busy}
-              className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-l from-[var(--accent)] to-[var(--accent-2)] px-4 py-3.5 text-base font-bold shadow-lg shadow-red-900/30 disabled:opacity-50"
+              className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-l from-[var(--accent)] to-[var(--accent-2)] px-4 py-3.5 text-base font-bold shadow-lg shadow-red-900/30 transition-opacity disabled:opacity-50"
             >
               <Check className="h-5 w-5" />
               {busy ? "جارِ الحفظ..." : "حفظ"}
@@ -379,25 +381,24 @@ export default function Navbar({
 
       {/* رسالة الترحيب أول مرة */}
       {welcomeOpen && (
-        <div
-          dir="rtl"
-          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
-        >
-          <div className="animate-fade-in-up w-full max-w-sm rounded-3xl border border-white/10 bg-[var(--bg-1)] p-6 text-center shadow-2xl">
+        <div dir="rtl" className={`${modalBackdrop} z-[70]`}>
+          <div className={`${modalCard} text-center`}>
             <div className="mb-4 flex justify-center">
               <Avatar name={profile.name} src={profile.avatar} size={72} />
             </div>
-            <h2 className="mb-2 text-lg font-bold text-[var(--gold)]">أهلاً بيك في المافيا 👋</h2>
+            <h2 className="mb-2 text-lg font-bold text-[var(--gold)]">أهلاً بيك في المافيا</h2>
             <p className="mb-3 text-sm leading-relaxed text-[var(--text-1)]">
               اتعمللك يوزر نيم تلقائي، ده اللي أصحابك هيضيفوك بيه:
             </p>
             <p
               dir="ltr"
-              className="mb-5 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 font-bold text-[var(--text-0)]"
+              className="mb-4 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 font-bold text-[var(--text-0)]"
             >
               @{profile.name}
             </p>
-            <p className="mb-5 text-sm text-[var(--text-1)]">تحب تغيره دلوقتي؟ وتقدر تغيره في أي وقت من الملف الشخصي.</p>
+            <p className="mb-5 text-sm text-[var(--text-1)]">
+              تحب تغيره دلوقتي؟ وتقدر تغيره في أي وقت من الملف الشخصي.
+            </p>
 
             <button
               onClick={changeFromWelcome}
@@ -407,7 +408,7 @@ export default function Navbar({
             </button>
             <button
               onClick={closeWelcome}
-              className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold hover:bg-white/10"
+              className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold transition-colors hover:bg-white/10"
             >
               سيبه كده
             </button>

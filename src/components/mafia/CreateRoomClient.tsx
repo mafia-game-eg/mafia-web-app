@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   Crosshair,
-  Home,
   ListChecks,
   Loader2,
   Minus,
@@ -29,7 +28,7 @@ import { loadProfile, shrinkAvatar } from "@/lib/client/profile";
 
 const NAME_REQUIRED_MSG = "اكتب اسمك أولًا من الصورة الشخصية أعلى الشاشة.";
 const STORAGE_KEY = "mafia:create-settings";
-const MIN_PLAYERS = 5;
+const MIN_PLAYERS = 4;
 const MAX_PLAYERS = 20;
 const EXTRA_ROLE_FROM = 10;
 
@@ -123,9 +122,9 @@ function Section({
   children: ReactNode;
 }) {
   return (
-    <section className="animate-fade-in-up rounded-3xl border border-white/10 bg-[var(--bg-1)] p-4 shadow-sm">
+    <section className="rounded-3xl border border-white/10 bg-[var(--bg-1)] p-4 md:p-5">
       <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="flex items-center gap-2.5 text-sm font-bold">
+        <h2 className="flex items-center gap-2.5 text-sm font-bold md:text-base">
           <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-[var(--text-1)]">
             {icon}
           </span>
@@ -157,7 +156,7 @@ function ToggleRow({
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className={`flex w-full items-center gap-3 rounded-2xl border px-3.5 py-3 text-right transition-all duration-200 active:scale-[0.98] ${focusRing} ${
+      className={`flex w-full items-center gap-3 rounded-2xl border px-3.5 py-3 text-right transition-colors duration-200 active:scale-[0.99] ${focusRing} ${
         checked ? "border-white/30 bg-white/[0.08]" : "border-white/10 bg-white/[0.03] hover:bg-white/[0.06]"
       }`}
     >
@@ -288,7 +287,7 @@ export default function CreateRoomClient() {
   }
 
   const primaryBtn =
-    "flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-4 py-4 text-lg font-bold text-black shadow-md shadow-white/10 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-white/90 hover:shadow-lg hover:shadow-white/15 active:translate-y-0 active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50 motion-reduce:transition-none";
+    "flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-4 py-4 text-lg font-bold text-black transition-all duration-200 ease-out hover:bg-white/90 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 motion-reduce:transition-none";
 
   return (
     <>
@@ -299,7 +298,12 @@ export default function CreateRoomClient() {
           setAvatar(p.avatar);
         }}
       />
-      <main className="mx-auto flex max-w-md flex-col gap-4 px-5 pt-4" dir="rtl">
+
+      {/* موبايل: عمود واحد | تابلت: عمود أعرض | ديسكتوب: عمودين */}
+      <main
+        className="mx-auto w-full max-w-md px-4 pb-6 pt-4 md:max-w-2xl md:px-6 md:pt-6 lg:max-w-5xl lg:px-8"
+        dir="rtl"
+      >
         {/* الهيدر */}
         <header className="flex animate-fade-in-up items-center gap-3">
           <button
@@ -311,250 +315,240 @@ export default function CreateRoomClient() {
             <ArrowRight className="h-5 w-5" />
           </button>
           <div className="min-w-0 flex-1">
-            <h1 className="text-xl font-extrabold">إنشاء غرفة</h1>
-            <p className="text-xs text-[var(--text-1)]">اضبط القواعد وادعُ أصحابك</p>
+            <h1 className="text-xl font-extrabold md:text-2xl">إنشاء غرفة</h1>
+            <p className="text-xs text-[var(--text-1)] md:text-sm">اضبط القواعد وادعُ أصحابك</p>
           </div>
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/20 bg-[var(--bg-1)]">
-            <Home className="h-5 w-5" strokeWidth={2} />
-          </span>
         </header>
 
-        {/* كارت المضيف */}
-        <div
-          className={`flex animate-fade-in-up items-center gap-3 rounded-2xl border px-3.5 py-3 ${
-            name.trim() ? "border-white/10 bg-[var(--bg-1)]" : "border-red-400/30 bg-red-500/10"
-          }`}
-        >
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/15 bg-white/[0.06]">
-            {typeof avatar === "string" && avatar ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={avatar} alt="" className="h-full w-full object-cover" />
-            ) : (
-              <User className="h-5 w-5 text-[var(--text-1)]" />
-            )}
-          </span>
-          {name.trim() ? (
-            <span className="min-w-0 flex-1">
-              <span className="block text-xs text-[var(--text-1)]">أنت مضيف الغرفة</span>
-              <span className="block truncate text-base font-bold">{name.trim()}</span>
-            </span>
-          ) : (
-            <span className="flex min-w-0 flex-1 items-center gap-2 text-sm text-red-300">
-              <TriangleAlert className="h-4 w-4 shrink-0" />
-              اكتب اسمك من الصورة الشخصية أعلى الشاشة
-            </span>
-          )}
-        </div>
-
-        {/* أنماط جاهزة */}
-        <Section
-          icon={<Zap className="h-4 w-4" />}
-          title="ابدأ بنمط جاهز"
-          aside={<span className="text-[11px] text-[var(--text-1)]">تقدر تعدّل بعدها</span>}
-        >
-          <div className="grid grid-cols-3 gap-2">
-            {PRESETS.map((p) => {
-              const active = activePreset?.id === p.id;
-              return (
-                <button
-                  key={p.id}
-                  type="button"
-                  aria-pressed={active}
-                  onClick={() => setS(p.settings)}
-                  className={`rounded-xl border px-2 py-3 text-center transition-all duration-200 active:scale-95 ${focusRing} ${
-                    active
-                      ? "border-white bg-white/15"
-                      : "border-white/10 bg-white/[0.03] hover:bg-white/[0.07]"
-                  }`}
-                >
-                  <span className="block text-sm font-bold">{p.title}</span>
-                  <span className="mt-0.5 block text-[11px] text-[var(--text-1)]">{p.desc}</span>
-                </button>
-              );
-            })}
-          </div>
-        </Section>
-
-        {/* اللاعبون */}
-        <Section icon={<Users className="h-4 w-4" />} title="عدد اللاعبين">
-          <div className="flex items-center justify-between gap-3">
-            <RoundBtn
-              label="زيادة العدد"
-              onClick={() => update({ maxPlayers: Math.min(MAX_PLAYERS, s.maxPlayers + 1) })}
-              disabled={s.maxPlayers >= MAX_PLAYERS}
-            >
-              <Plus className="h-5 w-5" />
-            </RoundBtn>
-            <div className="text-center">
-              <div className="flex items-baseline justify-center gap-1.5">
-                <span className="text-5xl font-extrabold leading-none tabular-nums text-[var(--gold)]">
-                  {s.maxPlayers}
-                </span>
-                <span className="text-sm text-[var(--text-1)]">لاعب</span>
-              </div>
-              <p className="mt-1.5 text-xs text-[var(--text-1)]">{sizeHint(s.maxPlayers)}</p>
-            </div>
-            <RoundBtn
-              label="تقليل العدد"
-              onClick={() => update({ maxPlayers: Math.max(MIN_PLAYERS, s.maxPlayers - 1) })}
-              disabled={s.maxPlayers <= MIN_PLAYERS}
-            >
-              <Minus className="h-5 w-5" />
-            </RoundBtn>
-          </div>
-
-          <input
-            type="range"
-            min={MIN_PLAYERS}
-            max={MAX_PLAYERS}
-            value={s.maxPlayers}
-            onChange={(e) => update({ maxPlayers: Number(e.target.value) })}
-            aria-label="عدد اللاعبين الأقصى"
-            className="mt-4 w-full accent-white"
-          />
-          <div className="mt-1 flex justify-between text-[11px] text-[var(--text-1)]">
-            <span>{MIN_PLAYERS}</span>
-            <span>{MAX_PLAYERS}</span>
-          </div>
-
-          <div className="mt-4">
-            <TeamSplit town={comp.town} mafia={comp.mafia} label="التوزيع عند اكتمال العدد" />
-          </div>
-          <p className="mt-3 text-xs leading-relaxed text-[var(--text-1)]">
-            اللعبة تبدأ بمن حضر، والعدد ده هو الحد الأقصى للي يقدر يدخل الغرفة.
-          </p>
-        </Section>
-
-        {/* القواعد */}
-        <Section icon={<ListChecks className="h-4 w-4" />} title="قواعد اللعبة">
-          <div className="flex flex-col gap-2.5">
-            <ToggleRow
-              icon={<Vote className="h-5 w-5" />}
-              title="إعادة تصويت عند التعادل"
-              desc="لو تعادل التصويت، يتعاد مرة تانية بدل ما ينتهي النهار بدون قرار."
-              checked={s.revoteOnTie}
-              onChange={(v) => update({ revoteOnTie: v })}
-            />
-            <ToggleRow
-              icon={<Skull className="h-5 w-5" />}
-              title="إظهار دور الميت بعد موته ليلًا"
-              desc="لو اتقفل، يفضل دور اللاعب سرّ حتى بعد خروجه."
-              checked={s.revealRoleOnDeath}
-              onChange={(v) => update({ revealRoleOnDeath: v })}
-            />
-          </div>
-
-          <div className="mt-5">
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-sm font-bold">أزواج الأسئلة بكل نهار</span>
-              <span className="text-xs text-[var(--text-1)]">{s.questionPairs} من 6</span>
-            </div>
-            <div className="grid grid-cols-6 gap-1.5" role="radiogroup" aria-label="عدد أزواج الأسئلة">
-              {[1, 2, 3, 4, 5, 6].map((n) => (
-                <button
-                  key={n}
-                  type="button"
-                  role="radio"
-                  aria-checked={s.questionPairs === n}
-                  onClick={() => update({ questionPairs: n })}
-                  className={`rounded-xl border py-2.5 text-sm font-bold tabular-nums transition-all duration-200 active:scale-90 ${focusRing} ${
-                    s.questionPairs === n
-                      ? "border-[var(--gold)] bg-[var(--gold)]/15 text-[var(--gold)]"
-                      : "border-white/10 bg-white/[0.03] text-[var(--text-1)] hover:bg-white/[0.07]"
-                  }`}
-                >
-                  {n}
-                </button>
-              ))}
-            </div>
-            <p className="mt-2 text-xs leading-relaxed text-[var(--text-1)]">
-              كل ما زادت الأزواج، طال النهار وزاد النقاش بين اللاعبين.
-            </p>
-          </div>
-        </Section>
-
-        {/* الدور الإضافي */}
-        <Section
-          icon={<ShieldCheck className="h-4 w-4" />}
-          title="الدور الإضافي"
-          aside={
-            <span
-              className={`rounded-full border px-2.5 py-0.5 text-[11px] ${
-                extraActive
-                  ? "border-[var(--town)]/40 text-[var(--town)]"
-                  : "border-white/15 text-[var(--text-1)]"
+        <div className="mt-4 grid gap-4 md:mt-6 lg:grid-cols-2 lg:items-start lg:gap-6">
+          {/* العمود الأول: المضيف + الأنماط + اللاعبين */}
+          <div className="flex flex-col gap-4">
+            {/* كارت المضيف */}
+            <div
+              className={`flex items-center gap-3 rounded-2xl border px-3.5 py-3 ${
+                name.trim() ? "border-white/10 bg-[var(--bg-1)]" : "border-red-400/30 bg-red-500/10"
               }`}
             >
-              {extraActive ? "مفعّل" : `من ${EXTRA_ROLE_FROM} لاعبين`}
-            </span>
-          }
-        >
-          <div
-            className={`grid grid-cols-2 gap-2.5 transition-opacity duration-200 ${
-              extraActive ? "" : "opacity-50"
-            }`}
-            role="radiogroup"
-            aria-label="الدور الإضافي"
-          >
-            {EXTRA_ROLES.map((r) => {
-              const active = s.extraRoleType === r.id;
-              const isSniper = r.id === "sniper";
-              return (
-                <button
-                  key={r.id}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  onClick={() => update({ extraRoleType: r.id })}
-                  className={`flex flex-col items-start gap-2 rounded-2xl border p-3.5 text-right transition-all duration-200 active:scale-[0.97] ${focusRing} ${
-                    active
-                      ? isSniper
-                        ? "border-[var(--gold)] bg-[var(--gold)]/15 text-[var(--gold)]"
-                        : "border-white bg-white/15 text-white"
-                      : "border-white/10 bg-white/[0.03] hover:bg-white/[0.07]"
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/15 bg-white/[0.06]">
+                {typeof avatar === "string" && avatar ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={avatar} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <User className="h-5 w-5 text-[var(--text-1)]" />
+                )}
+              </span>
+              {name.trim() ? (
+                <span className="min-w-0 flex-1">
+                  <span className="block text-xs text-[var(--text-1)]">أنت مضيف الغرفة</span>
+                  <span className="block truncate text-base font-bold">{name.trim()}</span>
+                </span>
+              ) : (
+                <span className="flex min-w-0 flex-1 items-center gap-2 text-sm text-red-300">
+                  <TriangleAlert className="h-4 w-4 shrink-0" />
+                  اكتب اسمك من الصورة الشخصية أعلى الشاشة
+                </span>
+              )}
+            </div>
+
+            {/* أنماط جاهزة */}
+            <Section icon={<Zap className="h-4 w-4" />} title="ابدأ بنمط جاهز">
+              <div className="grid grid-cols-3 gap-2 md:gap-3">
+                {PRESETS.map((p) => {
+                  const active = activePreset?.id === p.id;
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => setS(p.settings)}
+                      className={`rounded-xl border px-2 py-3 text-center transition-colors duration-200 active:scale-95 ${focusRing} ${
+                        active
+                          ? "border-white bg-white/15"
+                          : "border-white/10 bg-white/[0.03] hover:bg-white/[0.07]"
+                      }`}
+                    >
+                      <span className="block text-sm font-bold">{p.title}</span>
+                      <span className="mt-0.5 block text-[11px] text-[var(--text-1)] md:text-xs">
+                        {p.desc}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </Section>
+
+            {/* اللاعبون */}
+            <Section icon={<Users className="h-4 w-4" />} title="عدد اللاعبين">
+              <div className="flex items-center justify-between gap-3">
+                <RoundBtn
+                  label="زيادة العدد"
+                  onClick={() => update({ maxPlayers: Math.min(MAX_PLAYERS, s.maxPlayers + 1) })}
+                  disabled={s.maxPlayers >= MAX_PLAYERS}
+                >
+                  <Plus className="h-5 w-5" />
+                </RoundBtn>
+                <div className="text-center">
+                  <div className="flex items-baseline justify-center gap-1.5">
+                    <span className="text-5xl font-extrabold leading-none tabular-nums text-[var(--gold)] md:text-6xl">
+                      {s.maxPlayers}
+                    </span>
+                    <span className="text-sm text-[var(--text-1)]">لاعب</span>
+                  </div>
+                  <p className="mt-1.5 text-xs text-[var(--text-1)]">{sizeHint(s.maxPlayers)}</p>
+                </div>
+                <RoundBtn
+                  label="تقليل العدد"
+                  onClick={() => update({ maxPlayers: Math.max(MIN_PLAYERS, s.maxPlayers - 1) })}
+                  disabled={s.maxPlayers <= MIN_PLAYERS}
+                >
+                  <Minus className="h-5 w-5" />
+                </RoundBtn>
+              </div>
+
+              <input
+                type="range"
+                min={MIN_PLAYERS}
+                max={MAX_PLAYERS}
+                value={s.maxPlayers}
+                onChange={(e) => update({ maxPlayers: Number(e.target.value) })}
+                aria-label="عدد اللاعبين الأقصى"
+                className="mt-4 w-full accent-white"
+              />
+
+              <div className="mt-4">
+                <TeamSplit town={comp.town} mafia={comp.mafia} label="التوزيع عند اكتمال العدد" />
+              </div>
+              <p className="mt-3 text-xs leading-relaxed text-[var(--text-1)]">
+                اللعبة تبدأ بمن حضر، والعدد ده هو الحد الأقصى للي يقدر يدخل الغرفة.
+              </p>
+            </Section>
+          </div>
+
+          {/* العمود التاني: القواعد + الدور الإضافي + زرار الإنشاء */}
+          <div className="flex flex-col gap-4">
+            {/* القواعد */}
+            <Section icon={<ListChecks className="h-4 w-4" />} title="قواعد اللعبة">
+              <div className="flex flex-col gap-2.5">
+                <ToggleRow
+                  icon={<Vote className="h-5 w-5" />}
+                  title="إعادة تصويت عند التعادل"
+                  desc="لو تعادل التصويت، يتعاد مرة تانية بدل ما ينتهي النهار بدون قرار."
+                  checked={s.revoteOnTie}
+                  onChange={(v) => update({ revoteOnTie: v })}
+                />
+                <ToggleRow
+                  icon={<Skull className="h-5 w-5" />}
+                  title="إظهار دور الميت بعد موته"
+                  desc="لو شغّلته، دور اللاعب يظهر للكل أول ما يخرج من اللعبة."
+                  checked={s.revealRoleOnDeath}
+                  onChange={(v) => update({ revealRoleOnDeath: v })}
+                />
+              </div>
+
+              <div className="mt-5">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-sm font-bold">أزواج الأسئلة بكل نهار</span>
+                  <span className="text-xs text-[var(--text-1)]">{s.questionPairs} من 6</span>
+                </div>
+                <div className="grid grid-cols-6 gap-1.5 md:gap-2" role="radiogroup" aria-label="عدد أزواج الأسئلة">
+                  {[1, 2, 3, 4, 5, 6].map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      role="radio"
+                      aria-checked={s.questionPairs === n}
+                      onClick={() => update({ questionPairs: n })}
+                      className={`rounded-xl border py-2.5 text-sm font-bold tabular-nums transition-colors duration-200 active:scale-90 ${focusRing} ${
+                        s.questionPairs === n
+                          ? "border-[var(--gold)] bg-[var(--gold)]/15 text-[var(--gold)]"
+                          : "border-white/10 bg-white/[0.03] text-[var(--text-1)] hover:bg-white/[0.07]"
+                      }`}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </Section>
+
+            {/* الدور الإضافي */}
+            <Section
+              icon={<ShieldCheck className="h-4 w-4" />}
+              title="الدور الإضافي"
+              aside={
+                <span
+                  className={`rounded-full border px-2.5 py-0.5 text-[11px] ${
+                    extraActive
+                      ? "border-[var(--town)]/40 text-[var(--town)]"
+                      : "border-white/15 text-[var(--text-1)]"
                   }`}
                 >
-                  {r.icon}
-                  <span className="text-sm font-bold">{r.title}</span>
-                  <span className="text-xs leading-relaxed text-[var(--text-1)]">{r.desc}</span>
-                </button>
-              );
-            })}
-          </div>
-          {!extraActive && (
-            <p className="mt-3 text-xs leading-relaxed text-[var(--text-1)]">
-              اختيارك محفوظ، وهيشتغل أول ما العدد يوصل {EXTRA_ROLE_FROM} لاعبين.
-            </p>
-          )}
-        </Section>
-
-        {/* شريط الإنشاء الثابت */}
-        <div className="sticky bottom-0 z-10 -mx-5 mt-1 bg-gradient-to-t from-[var(--bg-0)] via-[var(--bg-0)]/95 to-transparent px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-6">
-          {error && (
-            <p
-              role="alert"
-              className="mb-3 animate-fade-in-up rounded-xl bg-red-500/15 px-3 py-2 text-center text-sm text-red-300"
+                  {extraActive ? "مفعّل" : `من ${EXTRA_ROLE_FROM} لاعبين`}
+                </span>
+              }
             >
-              {error}
-            </p>
-          )}
-          <p className="mb-2.5 text-center text-xs text-[var(--text-1)]">
-            {s.maxPlayers} لاعب · {comp.mafia} مافيا · {s.questionPairs} أزواج أسئلة
-            {s.revoteOnTie ? " · إعادة تصويت" : ""}
-          </p>
-          <button disabled={loading} onClick={handleCreate} className={primaryBtn}>
-            {loading ? (
-              <>
-                <Loader2 className="h-5 w-5 animate-spin" />
-                جارِ الإنشاء...
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-5 w-5" />
-                إنشاء الغرفة
-              </>
-            )}
-          </button>
+              <div
+                className={`grid grid-cols-2 gap-2.5 transition-opacity duration-200 md:gap-3 ${
+                  extraActive ? "" : "opacity-50"
+                }`}
+                role="radiogroup"
+                aria-label="الدور الإضافي"
+              >
+                {EXTRA_ROLES.map((r) => {
+                  const active = s.extraRoleType === r.id;
+                  const isSniper = r.id === "sniper";
+                  return (
+                    <button
+                      key={r.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={active}
+                      onClick={() => update({ extraRoleType: r.id })}
+                      className={`flex flex-col items-start gap-2 rounded-2xl border p-3.5 text-right transition-colors duration-200 active:scale-[0.98] ${focusRing} ${
+                        active
+                          ? isSniper
+                            ? "border-[var(--gold)] bg-[var(--gold)]/15 text-[var(--gold)]"
+                            : "border-white bg-white/15 text-white"
+                          : "border-white/10 bg-white/[0.03] hover:bg-white/[0.07]"
+                      }`}
+                    >
+                      {r.icon}
+                      <span className="text-sm font-bold">{r.title}</span>
+                      <span className="text-xs leading-relaxed text-[var(--text-1)]">{r.desc}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </Section>
+
+            {/* الإنشاء: ثابت تحت على الموبايل والتابلت، عادي في العمود على الديسكتوب */}
+            <div className="sticky bottom-0 z-10 -mx-4 bg-gradient-to-t from-[var(--bg-0)] via-[var(--bg-0)]/95 to-transparent px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-6 md:-mx-6 md:px-6 lg:static lg:mx-0 lg:bg-none lg:p-0">
+              {error && (
+                <p
+                  role="alert"
+                  className="mb-3 rounded-xl bg-red-500/15 px-3 py-2 text-center text-sm text-red-300"
+                >
+                  {error}
+                </p>
+              )}
+              <p className="mb-2.5 text-center text-xs text-[var(--text-1)]">
+                {s.maxPlayers} لاعب · {comp.mafia} مافيا · {s.questionPairs} أزواج أسئلة
+              </p>
+              <button disabled={loading} onClick={handleCreate} className={primaryBtn}>
+                {loading ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    جارِ الإنشاء...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-5 w-5" />
+                    إنشاء الغرفة
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
 
         {showHowTo && <HowToPlayModal onClose={() => setShowHowTo(false)} />}

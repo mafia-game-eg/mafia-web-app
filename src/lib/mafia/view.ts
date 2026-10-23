@@ -2,22 +2,26 @@ import type { NightLogEntry, Player, Role, Room, VoteRevealResult } from "./type
 import { ROLE_INFO } from "./roles";
 import { alivePlayers } from "./engine";
 
+// ✏️ النص ده بيظهر لكل اللاعبين بنفس الشكل (عن قصد)، عشان محدش يعرف دور غيره من شاشته.
+// الجملة التانية بتشرح للي مش دوره إن اختياره تمويه ومش هيتحسب.
+const DECOY_NOTE = " إن لم يكن دورك الآن فاختر أي لاعب للتمويه؛ اختيارك لن يُحتسب.";
+
 const NIGHT_LABELS: Record<string, { label: string; instruction: string }> = {
   mafia: {
     label: "مرحلة المافيا",
-    instruction: "اختر اللاعب الذي تريد استهدافه الليلة.",
+    instruction: "المافيا تختار ضحية الليلة." + DECOY_NOTE,
   },
   doctor: {
     label: "مرحلة الطبيب",
-    instruction: "اختر اللاعب الذي تريد إنقاذه الليلة.",
+    instruction: "الطبيب يختار من ينقذه الليلة." + DECOY_NOTE,
   },
   detective: {
     label: "مرحلة المحقق",
-    instruction: "اختر اللاعب الذي تريد التحقيق معه.",
+    instruction: "المحقق يختار من يتحقق منه الليلة." + DECOY_NOTE,
   },
   extra: {
     label: "مرحلة الدور الإضافي",
-    instruction: "اختر اللاعب الذي تريد التعامل معه الليلة.",
+    instruction: "صاحب الدور الإضافي يتصرف الليلة." + DECOY_NOTE,
   },
 };
 
