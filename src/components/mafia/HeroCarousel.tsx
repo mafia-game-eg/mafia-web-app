@@ -29,9 +29,16 @@ export default function HeroCarousel({ interval = 3500 }: { interval?: number })
   const [active, setActive] = useState(0);
   const [dragging, setDragging] = useState(false);
 
+  // بنحرّك الشريط نفسه بس (مش الصفحة كلها) — scrollIntoView كان بيسحب الصفحة لتحت
+  // لو الكاروسيل ظاهر جزئيًا، وده بيبوّظ تجربة السكرول على الديسكتوب.
   const goTo = useCallback((i: number) => {
-    const el = trackRef.current?.children[i] as HTMLElement | undefined;
-    el?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+    const track = trackRef.current;
+    const el = track?.children[i] as HTMLElement | undefined;
+    if (!track || !el) return;
+    const t = track.getBoundingClientRect();
+    const c = el.getBoundingClientRect();
+    const delta = c.left + c.width / 2 - (t.left + t.width / 2); // شغال في RTL و LTR
+    track.scrollBy({ left: delta, behavior: "smooth" });
   }, []);
 
   // يعرف الصورة الظاهرة حاليًا (سواء اتحركت لوحدها أو بالسحب)
@@ -53,14 +60,21 @@ export default function HeroCarousel({ interval = 3500 }: { interval?: number })
     return () => io.disconnect();
   }, []);
 
-  // الحركة التلقائية
+  // الحركة التلقائية (بتقف لو التاب مش ظاهر)
   useEffect(() => {
     const id = setInterval(() => {
-      if (pausedRef.current) return;
+      if (pausedRef.current || document.hidden) return;
       goTo(active + 1);
     }, interval);
     return () => clearInterval(id);
   }, [active, goTo, interval]);
+
+  useEffect(() => {
+    return () => {
+      clearTimeout(resumeTimer.current);
+      clearTimeout(settleTimer.current);
+    };
+  }, []);
 
   // لما السكرول يهدى: لو وقفنا على النسخة، نقفز للأولى الحقيقية فورًا
   const handleScroll = () => {
@@ -106,7 +120,7 @@ export default function HeroCarousel({ interval = 3500 }: { interval?: number })
     track.scrollLeft = startScrollRef.current - (e.clientX - startXRef.current);
   };
 
-  const endDrag = (e: PointerEvent<HTMLDivElement>) => {
+  const endDrag = () => {
     if (draggingRef.current) {
       draggingRef.current = false;
       setDragging(false);
@@ -121,7 +135,7 @@ export default function HeroCarousel({ interval = 3500 }: { interval?: number })
   };
 
   return (
-    <div>
+    <div onMouseEnter={pause} onMouseLeave={resume}>
       <div
         ref={trackRef}
         dir="rtl"
@@ -130,37 +144,44 @@ export default function HeroCarousel({ interval = 3500 }: { interval?: number })
         onPointerMove={onPointerMove}
         onPointerUp={endDrag}
         onPointerCancel={endDrag}
-        className={`flex overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
+        className={`flex overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
           dragging
             ? "cursor-grabbing snap-none scroll-auto"
             : "cursor-grab snap-x snap-mandatory scroll-smooth"
         }`}
       >
         {loopSlides.map((s, i) => (
-          <div key={`${s.src}-${i}`} data-index={i} className="w-full shrink-0 snap-center px-3">
+          <div key={`${s.src}-${i}`} data-index={i} className="w-full shrink-0 snap-center px-1 sm:px-3">
             <Image
               src={s.src}
               alt={s.alt}
               width={1800}
               height={780}
               priority={i === 0}
-              
-              draggable={false}className="slide-card mx-auto h-auto w-full max-w-md select-none object-cover"
+              draggable={false}
+              sizes="(min-width: 1024px) 560px, (min-width: 768px) 512px, 100vw"
+              className="slide-card mx-auto h-auto w-full max-w-md select-none object-cover md:max-w-lg lg:max-w-none"
             />
           </div>
         ))}
       </div>
 
-      <div className="mt-3 flex justify-center gap-1.5">
+      <div className="mt-1.5 flex justify-center" role="group" aria-label="اختيار الصورة">
         {slides.map((_, i) => (
           <button
             key={i}
+            type="button"
             onClick={() => goTo(i)}
             aria-label={`الصورة ${i + 1}`}
-            className={`h-1.5 rounded-full transition-all duration-300 ${
-              i === active ? "w-5 bg-white" : "w-1.5 bg-white/30"
-            }`}
-          />
+            aria-current={i === active}
+            className="group flex h-6 items-center justify-center px-[3px] focus-visible:outline-none"
+          >
+            <span
+              className={`block h-1.5 rounded-full transition-all duration-300 group-focus-visible:ring-2 group-focus-visible:ring-white/60 ${
+                i === active ? "w-5 bg-white" : "w-1.5 bg-white/30"
+              }`}
+            />
+          </button>
         ))}
       </div>
     </div>

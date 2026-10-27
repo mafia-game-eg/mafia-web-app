@@ -23,6 +23,7 @@ import { api } from "@/lib/client/api";
 import { listSessions } from "@/lib/client/storage";
 import HowToPlayModal from "@/components/mafia/HowToPlayModal";
 import Navbar from "@/components/mafia/Navbar";
+import BottomNav from "@/components/mafia/BottomNav";
 import ImageButton from "@/components/mafia/ImageButton";
 import TeamSplit from "@/components/mafia/TeamSplit";
 
@@ -48,9 +49,13 @@ const startSteps = [
   { n: "3", title: "ابدأوا اللعب", desc: "ليل ونهار وتصويت" },
 ];
 
+// رابط صفحة الملف الشخصي — غيّره لو المسار عندك مختلف (أو مرّر onOpenProfile للـ BottomNav)
+const PROFILE_HREF = "/profile";
+
 const GAP = "gap-3.5 md:gap-5 lg:gap-6";
 
 // كلاسات مشتركة للكروت والأزرار الثانوية
+const COL = "mx-auto w-full min-w-0 md:max-w-xl lg:max-w-none";
 const CARD = "rounded-2xl border border-white/10 bg-white/[0.03]";
 const FOCUS =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40";
@@ -130,8 +135,9 @@ export default function HomeClient() {
         /* موبايل أفقي / شاشة قصيرة وعريضة: عمودين بدل عمود واحد طويل */
         @media (orientation: landscape) and (min-width: 640px) and (max-height: 520px) {
           .mf-home { max-width: 60rem !important; justify-content: flex-start !important; }
-          .mf-grid { grid-template-columns: 1fr 1fr !important; align-items: center; column-gap: 1.5rem !important; }
-          .mf-hero { max-width: 18rem; margin-inline: auto; }
+          .mf-grid { grid-template-columns: 1fr 1fr !important; align-items: start; column-gap: 1.5rem !important; }
+          .mf-hero { max-width: 18rem; margin-inline: auto; align-self: center; }
+          .mf-info { grid-template-columns: 1fr !important; }
         }
 
         /* احترام تقليل الحركة للمستخدمين اللي بيفضلوا كده */
@@ -147,7 +153,7 @@ export default function HomeClient() {
       <Navbar onOpenHowTo={() => setShowHowTo(true)} onProfileChange={() => {}} />
 
       <main
-        className={`mf-home relative mx-auto flex min-h-[calc(100dvh-5rem)] w-full max-w-md flex-col justify-center px-4 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] pt-3 sm:px-5 md:max-w-2xl md:px-8 md:pt-6 lg:max-w-5xl lg:px-10 xl:max-w-6xl ${GAP}`}
+        className={`mf-home relative mx-auto flex min-h-[calc(100dvh-5rem)] w-full max-w-md flex-col justify-center px-4 pb-[calc(6rem+env(safe-area-inset-bottom,0px))] pt-3 md:pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] sm:px-5 md:max-w-2xl md:px-8 md:pt-6 lg:max-w-5xl lg:px-10 xl:max-w-6xl ${GAP}`}
         dir="rtl"
       >
         {/* إضاءة خلفية خفيفة (شكل بس — مش بتستقبل كليكات) */}
@@ -186,26 +192,26 @@ export default function HomeClient() {
 
         {/* موبايل/تابلت عمودي: عمود واحد — لابتوب/ديسكتوب: عمودين (الكاروسيل | باقي المحتوى) */}
         <div
-          className={`mf-grid relative z-10 grid grid-cols-1 lg:grid-cols-2 lg:items-center lg:gap-14 xl:gap-20 ${GAP}`}
+          className={`mf-grid relative z-10 grid grid-cols-1 lg:grid-cols-2 lg:items-start lg:gap-x-14 lg:gap-y-6 xl:gap-x-20 ${GAP}`}
         >
-          {/* العمود الأول: الكاروسيل */}
-          <div className="mf-hero animate-fade-in-up text-center">
+          {/* 1) الكاروسيل — ديسكتوب: أعلى اليمين */}
+          <div className="mf-hero animate-fade-in-up text-center lg:col-start-1 lg:row-start-1 lg:self-center">
             <h1 className="sr-only">المافيا</h1>
             {/* الهامش السالب على الموبايل بس: يخلي الكاروسيل بنفس عرض المحتوى اللي تحته */}
-            <div className="-mx-2 w-full max-w-md sm:mx-auto md:max-w-lg lg:max-w-none">
+            <div className="mx-auto w-full max-w-md md:max-w-lg lg:max-w-none">
               <HeroCarousel />
             </div>
           </div>
 
-          {/* العمود التاني: المحتوى */}
-          <div className={`mx-auto flex w-full min-w-0 flex-col md:max-w-xl lg:max-w-none ${GAP}`}>
-            <div className="mf-stagger animate-fade-in-up" style={stagger(0)}>
+          {/* 2) التشكيلة + أزرار الإجراء — ديسكتوب: أعلى اليسار */}
+          <div className={`${COL} flex flex-col lg:col-start-2 lg:row-start-1 ${GAP}`}>
+            <div className="mf-stagger animate-fade-in-up max-md:order-2" style={stagger(0)}>
               <TeamSplit town={11} mafia={3} label="التشكيلة المثالية · 14 لاعب" />
             </div>
 
             {/* أزرار الإجراء الأساسية */}
             <div
-              className="mf-stagger grid animate-fade-in-up grid-cols-2 gap-3 md:gap-4"
+              className="mf-stagger grid animate-fade-in-up grid-cols-2 gap-3 max-md:order-1 md:gap-4"
               style={stagger(1)}
             >
               <ImageButton
@@ -229,9 +235,12 @@ export default function HomeClient() {
               />
             </div>
 
-            {/* الأدوار + دورة اللعبة: جنب بعض على التابلت، فوق بعض على الموبايل والديسكتوب */}
+          </div>
+
+          {/* 3) الأدوار + دورة اللعبة: جنب بعض على التابلت، فوق بعض على الموبايل والديسكتوب — ديسكتوب: تحت الكاروسيل */}
+          <div className={`${COL} lg:col-start-1 lg:row-start-2`}>
             <div
-              className="mf-stagger grid animate-fade-in-up grid-cols-1 gap-3 md:grid-cols-2 md:items-stretch md:gap-4 lg:grid-cols-1"
+              className="mf-info mf-stagger grid animate-fade-in-up grid-cols-1 gap-3 md:grid-cols-2 md:items-stretch md:gap-4 lg:grid-cols-1"
               style={stagger(2)}
             >
               {/* شريط الأدوار */}
@@ -293,6 +302,10 @@ export default function HomeClient() {
               </section>
             </div>
 
+          </div>
+
+          {/* 4) خطوات البداية + شرح + غرف قديمة — ديسكتوب: تحت الأزرار */}
+          <div className={`${COL} flex flex-col lg:col-start-2 lg:row-start-2 ${GAP}`}>
             {/* خطوات البداية */}
             <section
               aria-label="خطوات البداية"
@@ -328,7 +341,7 @@ export default function HomeClient() {
                 haptic();
                 setShowHowTo(true);
               }}
-              className={`mf-stagger mx-auto flex min-h-[44px] animate-fade-in-up items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-5 py-2.5 text-xs font-semibold text-[var(--text-1)] transition-colors duration-200 hover:bg-white/[0.08] active:scale-95 md:text-sm ${FOCUS}`}
+              className={`mf-stagger mx-auto hidden min-h-[44px] md:flex animate-fade-in-up items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-5 py-2.5 text-xs font-semibold text-[var(--text-1)] transition-colors duration-200 hover:bg-white/[0.08] active:scale-95 md:text-sm ${FOCUS}`}
               style={stagger(4)}
             >
               <BookOpen className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
@@ -371,6 +384,9 @@ export default function HomeClient() {
 
         {showHowTo && <HowToPlayModal onClose={() => setShowHowTo(false)} />}
       </main>
+
+      {/* شريط التنقل السفلي — موبايل بس */}
+      <BottomNav onOpenHowTo={() => setShowHowTo(true)} profileHref={PROFILE_HREF} />
     </>
   );
 }

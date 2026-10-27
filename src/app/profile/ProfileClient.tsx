@@ -21,12 +21,14 @@ import {
   Users,
   X,
 } from "lucide-react";
+import BottomNav from "@/components/mafia/BottomNav";
 
 /* =====================================================================
-   ProfileClient — صفحة البروفايل (ثيم فاتح + ريسبونسيف على كل الأجهزة)
+   ProfileClient — صفحة البروفايل
+   بنفس هوية الصفحة الرئيسية (أسود/أبيض + أخضر الصالحين + أحمر المافيا)
+   وريسبونسيف على الفون والتابلت واللابتوب.
    بتجيب حسابك من /api/profile وتعدّل اليوزر نيم والصورة،
-   وفيها قسم أصدقاء كامل (طلبات واردة / صادرة) بنفس فكرة ألعاب الشطرنج،
-   بيتكلم مع /api/friends.
+   وفيها قسم أصدقاء كامل (طلبات واردة / صادرة) بيتكلم مع /api/friends.
    لو مسار الـ API عندك مختلف، عدّل السطرين دول وبس.
 ===================================================================== */
 
@@ -57,11 +59,31 @@ type FriendsData = {
 
 type TabKey = "friends" | "incoming" | "outgoing";
 
-const TABS: Array<{ key: TabKey; label: string }> = [
-  { key: "friends", label: "الأصدقاء" },
-  { key: "incoming", label: "طلبات وصلت" },
-  { key: "outgoing", label: "طلبات بعتّها" },
+const TABS: Array<{ key: TabKey; label: string; short: string }> = [
+  { key: "friends", label: "الأصدقاء", short: "الأصدقاء" },
+  { key: "incoming", label: "طلبات وصلت", short: "الواردة" },
+  { key: "outgoing", label: "طلبات بعتّها", short: "المرسلة" },
 ];
+
+/* ------------------------------------------------------------------
+   ملاحظة مهمة: في تطبيقك لون "white" في Tailwind معمول له remap
+   (بيطلع أسود/حبر في الثيم الفاتح)، عشان كده هنا مستخدمين
+   متغيرات الثيم (--bg-1 / --text-1 / --town) وألوان صريحة بدل
+   bg-white / text-white عشان الشكل يطلع زي ما هو مقصود.
+------------------------------------------------------------------ */
+
+const CARD = "rounded-3xl border border-white/10 bg-[var(--bg-1)]";
+const INK = "bg-[#0a0a0a] text-[#fff]";
+const MUTED = "text-[var(--text-1)]";
+const SOFT_BTN =
+  "border border-white/10 bg-white/[0.04] text-[var(--text-1)] hover:bg-white/[0.08]";
+const FOCUS =
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40";
+const FIELD_BASE =
+  "flex items-center overflow-hidden rounded-2xl border bg-white/[0.04] transition-colors";
+const FIELD_OK =
+  "border-white/10 focus-within:border-[var(--town)] focus-within:bg-transparent";
+const FIELD_ERR = "border-red-400";
 
 /* ----------------------------- أدوات صغيرة ----------------------------- */
 
@@ -151,11 +173,11 @@ async function shrinkImage(file: File): Promise<string> {
 
 const PF_CSS = `
 @keyframes pf-fade-up {
-  from { opacity: 0; transform: translateY(14px); }
+  from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
 @keyframes pf-pop {
-  from { opacity: 0; transform: scale(.94) translateY(10px); }
+  from { opacity: 0; transform: scale(.96) translateY(10px); }
   to { opacity: 1; transform: scale(1) translateY(0); }
 }
 @keyframes pf-toast-in {
@@ -169,21 +191,13 @@ const PF_CSS = `
   60% { transform: translateX(-4px); }
   80% { transform: translateX(4px); }
 }
-.pf-card {
-  border-radius: 28px;
-  border: 1px solid #e9eaf1;
-  background: #ffffff;
-  box-shadow: 0 18px 50px -24px rgba(23, 23, 43, 0.18);
-}
-.pf-fade-up { animation: pf-fade-up .5s cubic-bezier(.22,.8,.32,1) both; }
-.pf-pop { animation: pf-pop .28s cubic-bezier(.22,.8,.32,1) both; }
+.pf-fade-up { animation: pf-fade-up .45s cubic-bezier(.22,.8,.32,1) both; }
+.pf-pop { animation: pf-pop .26s cubic-bezier(.22,.8,.32,1) both; }
 .pf-toast { animation: pf-toast-in .25s ease-out both; }
 .pf-shake { animation: pf-shake .4s ease both; }
-.pf-tabs { scrollbar-width: none; }
-.pf-tabs::-webkit-scrollbar { display: none; }
-.pf-scroll { scrollbar-width: thin; scrollbar-color: #d8dae5 transparent; }
+.pf-scroll { scrollbar-width: thin; scrollbar-color: rgba(120,120,120,.35) transparent; }
 .pf-scroll::-webkit-scrollbar { width: 6px; }
-.pf-scroll::-webkit-scrollbar-thumb { background: #d8dae5; border-radius: 999px; }
+.pf-scroll::-webkit-scrollbar-thumb { background: rgba(120,120,120,.35); border-radius: 999px; }
 @media (prefers-reduced-motion: reduce) {
   .pf-root *, .pf-root *::before, .pf-root *::after {
     animation-duration: .001ms !important;
@@ -200,25 +214,28 @@ function PfAvatar({
   username,
   box,
   txt,
+  ring = "ring-2 ring-[var(--bg-1)]",
 }: {
   avatar: string | null;
   username: string;
   box: string;
   txt: string;
+  ring?: string;
 }) {
   if (avatar) {
     return (
+      // eslint-disable-next-line @next/next/no-img-element
       <img
         src={avatar}
         alt={username}
         draggable={false}
-        className={`${box} shrink-0 rounded-full object-cover shadow-md ring-2 ring-white`}
+        className={`${box} shrink-0 rounded-full object-cover ${ring}`}
       />
     );
   }
   return (
     <div
-      className={`${box} flex shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-600 font-extrabold text-white shadow-md ring-2 ring-white`}
+      className={`${box} flex shrink-0 items-center justify-center rounded-full ${INK} font-extrabold ${ring}`}
     >
       <span className={txt}>{(username || "؟").trim().charAt(0).toUpperCase()}</span>
     </div>
@@ -227,10 +244,27 @@ function PfAvatar({
 
 function PfEmpty({ icon, title, sub }: { icon: ReactNode; title: string; sub: string }) {
   return (
-    <div className="flex flex-col items-center gap-2 py-12 text-center">
-      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#f2f3f8]">{icon}</div>
-      <p className="text-sm font-extrabold text-slate-600">{title}</p>
-      <p className="max-w-[260px] text-xs leading-relaxed text-slate-400">{sub}</p>
+    <div className="flex flex-col items-center gap-2 px-2 py-10 text-center sm:py-12">
+      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/[0.05]">
+        {icon}
+      </div>
+      <p className="text-sm font-extrabold">{title}</p>
+      <p className={`max-w-[260px] text-xs leading-relaxed ${MUTED}`}>{sub}</p>
+    </div>
+  );
+}
+
+// شريط نقط صغير: نفس فكرة تشكيلة الـ 14 لاعب (11 صالحين + 3 مافيا)
+function RosterDots() {
+  return (
+    <div className="flex items-center gap-1.5" aria-hidden="true">
+      {Array.from({ length: 14 }).map((_, i) => (
+        <span
+          key={i}
+          className="h-1.5 w-1.5 rounded-full"
+          style={{ background: i < 3 ? "#dc2626" : "var(--town)", opacity: 0.95 }}
+        />
+      ))}
     </div>
   );
 }
@@ -629,17 +663,21 @@ export default function ProfileClient() {
 
   /* ------------------------------ العرض ------------------------------ */
 
+  const PAGE_PAD =
+    "mx-auto w-full max-w-md px-4 pb-[calc(6.5rem+env(safe-area-inset-bottom,0px))] pt-4 sm:px-5 md:max-w-2xl md:px-8 md:pb-14 md:pt-8 lg:max-w-5xl lg:px-10 xl:max-w-6xl";
+
   if (loading) {
     return (
-      <div dir="rtl" className="pf-root min-h-[100dvh] w-full bg-[#f5f6fa] text-[#171923]">
+      <div dir="rtl" className="pf-root min-h-[100dvh] w-full">
         <style>{PF_CSS}</style>
-        <main className="mx-auto w-full max-w-5xl px-3 pb-14 pt-5 sm:px-6 sm:pt-8">
-          <div className="h-9 w-28 animate-pulse rounded-full bg-white shadow-sm" />
-          <div className="mt-6 grid gap-4 sm:gap-6 lg:grid-cols-[minmax(0,400px)_minmax(0,1fr)]">
-            <div className="pf-card h-[420px] animate-pulse" />
-            <div className="pf-card h-[420px] animate-pulse" />
+        <main className={PAGE_PAD}>
+          <div className="h-10 w-24 animate-pulse rounded-full bg-white/[0.06]" />
+          <div className="mt-6 grid gap-4 md:gap-6 lg:grid-cols-[minmax(0,400px)_minmax(0,1fr)]">
+            <div className={`${CARD} h-[420px] animate-pulse`} />
+            <div className={`${CARD} h-[360px] animate-pulse`} />
           </div>
         </main>
+        <BottomNav />
       </div>
     );
   }
@@ -648,15 +686,15 @@ export default function ProfileClient() {
     return (
       <div
         dir="rtl"
-        className="pf-root flex min-h-[100dvh] w-full items-center justify-center bg-[#f5f6fa] px-4 text-[#171923]"
+        className="pf-root flex min-h-[calc(100dvh-4rem)] w-full items-center justify-center px-4 pb-24 md:pb-0"
       >
         <style>{PF_CSS}</style>
-        <div className="pf-card pf-pop w-full max-w-sm p-8 text-center">
-          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-[#f2f3f8]">
-            <UserX className="h-7 w-7 text-slate-400" />
+        <div className={`${CARD} pf-pop w-full max-w-sm p-7 text-center sm:p-8`}>
+          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-white/[0.05]">
+            <UserX className={`h-7 w-7 ${MUTED}`} />
           </div>
           <h1 className="text-lg font-extrabold">الصفحة دي محتاجة تسجيل دخول</h1>
-          <p className="mt-1.5 text-sm leading-relaxed text-slate-500">
+          <p className={`mt-1.5 text-sm leading-relaxed ${MUTED}`}>
             سجّل دخول الأول وبعدين ارجع هنا تظبط بروفايلك وضيف أصحابك.
           </p>
           <button
@@ -665,26 +703,27 @@ export default function ProfileClient() {
               haptic(8);
               router.push("/");
             }}
-            className="mt-5 w-full rounded-2xl bg-gradient-to-l from-amber-500 to-orange-500 py-3 text-sm font-extrabold text-white shadow-lg shadow-orange-500/25 transition hover:brightness-[1.03] active:scale-[.99]"
+            className={`mt-5 min-h-[48px] w-full rounded-2xl ${INK} text-sm font-extrabold transition active:scale-[.98] ${FOCUS}`}
           >
             الصفحة الرئيسية
           </button>
         </div>
+        <BottomNav />
       </div>
     );
   }
 
   return (
-    <div dir="rtl" className="pf-root min-h-[100dvh] w-full bg-[#f5f6fa] text-[#171923]">
+    <div dir="rtl" className="pf-root min-h-[100dvh] w-full">
       <style>{PF_CSS}</style>
 
-      {/* توهجات خلفية ناعمة */}
-      <div aria-hidden className="pointer-events-none fixed inset-x-0 top-0 h-72 overflow-hidden">
-        <div className="absolute -top-24 right-[10%] h-64 w-64 rounded-full bg-amber-200/40 blur-3xl" />
-        <div className="absolute -top-10 left-[6%] h-52 w-52 rounded-full bg-orange-200/30 blur-3xl" />
-      </div>
+      {/* إضاءة خلفية خفيفة (شكل بس) — نفس الصفحة الرئيسية */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute left-1/2 top-0 z-0 h-56 w-56 -translate-x-1/2 rounded-full bg-[var(--town)] opacity-[0.07] blur-3xl md:h-72 md:w-72"
+      />
 
-      <main className="relative mx-auto w-full max-w-5xl px-3 pb-14 pt-5 sm:px-6 sm:pt-8">
+      <main className={`relative z-10 ${PAGE_PAD}`}>
         {/* رجوع */}
         <button
           type="button"
@@ -692,38 +731,49 @@ export default function ProfileClient() {
             haptic(8);
             router.push("/");
           }}
-          className="inline-flex items-center gap-2 rounded-full border border-[#e9eaf1] bg-white/80 px-4 py-2 text-sm font-bold text-slate-600 shadow-sm transition hover:bg-white hover:text-slate-900 active:scale-95"
+          className={`inline-flex min-h-[44px] items-center gap-2 rounded-full px-4 text-sm font-bold transition active:scale-95 ${SOFT_BTN} ${FOCUS}`}
         >
-          <ArrowRight className="h-4 w-4" />
+          <ArrowRight className="h-4 w-4" aria-hidden="true" />
           رجوع
         </button>
 
         {/* العنوان */}
-        <header className="pf-fade-up mb-5 mt-4 sm:mb-7">
-          <h1 className="text-2xl font-extrabold sm:text-3xl">الملف الشخصي</h1>
-          <p className="mt-1 text-sm text-slate-500 sm:text-base">
+        <header className="pf-fade-up mb-5 mt-4 md:mb-7">
+          <h1 className="text-2xl font-black sm:text-3xl">الملف الشخصي</h1>
+          <p className={`mt-1 text-sm sm:text-base ${MUTED}`}>
             صورتك واسمك وأصحابك — كله في مكان واحد.
           </p>
-          <div className="mt-2.5 h-1.5 w-16 rounded-full bg-gradient-to-l from-amber-400 to-orange-500" />
         </header>
 
-        <div className="grid items-start gap-4 sm:gap-6 lg:grid-cols-[minmax(0,400px)_minmax(0,1fr)]">
+        <div className="grid items-start gap-4 md:gap-6 lg:grid-cols-[minmax(0,400px)_minmax(0,1fr)] xl:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
           {/* ==================== كارت البروفايل ==================== */}
-          <section className="pf-card pf-fade-up overflow-hidden" style={stagger(1)}>
-            <div className="relative h-24 bg-gradient-to-l from-amber-100 via-orange-50 to-white sm:h-28">
-              <div
-                aria-hidden
-                className="absolute -bottom-6 right-5 h-20 w-20 rounded-full bg-amber-300/30 blur-2xl sm:h-24 sm:w-24"
+          <section
+            className={`${CARD} pf-fade-up overflow-hidden lg:sticky lg:top-6`}
+            style={stagger(1)}
+            aria-label="بيانات حسابك"
+          >
+            {/* البانر: أسود زي أزرار الصفحة الرئيسية */}
+            <div className="relative h-24 overflow-hidden bg-[#0a0a0a] sm:h-28">
+              <span
+                aria-hidden="true"
+                className="absolute -left-8 -top-10 h-40 w-40 rounded-full border border-[#fff]/10"
               />
+              <span
+                aria-hidden="true"
+                className="absolute -left-2 -top-4 h-28 w-28 rounded-full border border-[#fff]/10"
+              />
+              <div className="absolute bottom-3 right-5">
+                <RosterDots />
+              </div>
             </div>
 
             <div className="-mt-12 px-5 pb-6 sm:-mt-14 sm:px-7 sm:pb-7">
               {/* الصورة */}
-              <div className="mb-4 flex items-end justify-between">
+              <div className="mb-5 flex items-end justify-between gap-3">
                 <div className="relative">
                   {picking ? (
-                    <div className="flex h-24 w-24 items-center justify-center rounded-full bg-white shadow-md ring-4 ring-white sm:h-28 sm:w-28">
-                      <Loader2 className="h-7 w-7 animate-spin text-amber-500" />
+                    <div className="flex h-24 w-24 items-center justify-center rounded-full bg-[var(--bg-1)] ring-4 ring-[var(--bg-1)] sm:h-28 sm:w-28">
+                      <Loader2 className="h-7 w-7 animate-spin text-[var(--town)]" />
                     </div>
                   ) : (
                     <PfAvatar
@@ -731,6 +781,7 @@ export default function ProfileClient() {
                       username={username || initial.username}
                       box="h-24 w-24 sm:h-28 sm:w-28"
                       txt="text-4xl"
+                      ring="ring-4 ring-[var(--bg-1)]"
                     />
                   )}
                   <button
@@ -739,10 +790,10 @@ export default function ProfileClient() {
                       haptic(8);
                       fileRef.current?.click();
                     }}
-                    aria-label="غير صورتك"
-                    className="absolute -bottom-1 -right-1 flex h-9 w-9 items-center justify-center rounded-full border border-[#e9eaf1] bg-white text-slate-600 shadow-md transition hover:text-amber-600 active:scale-95"
+                    aria-label="غيّر صورتك"
+                    className={`absolute -bottom-1 -right-1 flex h-10 w-10 items-center justify-center rounded-full ring-2 ring-[var(--bg-1)] transition active:scale-95 ${INK} ${FOCUS}`}
                   >
-                    <Camera className="h-4 w-4" />
+                    <Camera className="h-4 w-4" aria-hidden="true" />
                   </button>
                   {avatar && !picking && (
                     <button
@@ -752,31 +803,22 @@ export default function ProfileClient() {
                         setAvatar(null);
                       }}
                       aria-label="شيل الصورة"
-                      className="absolute -left-1 -top-1 flex h-8 w-8 items-center justify-center rounded-full border border-[#e9eaf1] bg-white text-slate-400 shadow-md transition hover:text-red-500 active:scale-95"
+                      className={`absolute -left-1 -top-1 flex h-9 w-9 items-center justify-center rounded-full bg-[var(--bg-1)] ring-2 ring-[var(--bg-1)] transition hover:text-red-500 active:scale-95 ${MUTED} ${FOCUS}`}
                     >
-                      <Trash2 className="h-3.5 w-3.5" />
+                      <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                     </button>
                   )}
                 </div>
-                <p className="pb-1 text-xs text-slate-400">PNG أو JPEG أو WebP</p>
+                <p className={`pb-1 text-[11px] sm:text-xs ${MUTED}`}>PNG أو JPEG أو WebP</p>
               </div>
 
               {/* اليوزر نيم */}
-              <label className="mb-1.5 block text-xs font-bold text-slate-500" htmlFor="pf-username">
+              <label className={`mb-1.5 block text-xs font-bold ${MUTED}`} htmlFor="pf-username">
                 اليوزر نيم
               </label>
-              <div
-                className={shaking ? "pf-shake" : ""}
-                onAnimationEnd={() => setShaking(false)}
-              >
-                <div
-                  className={`flex items-center overflow-hidden rounded-2xl border bg-[#f7f7fa] transition ${
-                    fieldError
-                      ? "border-red-300"
-                      : "border-[#e5e6ee] focus-within:border-amber-400 focus-within:bg-white"
-                  }`}
-                >
-                  <span className="pl-3 pr-4 text-sm font-bold text-slate-400">@</span>
+              <div className={shaking ? "pf-shake" : ""} onAnimationEnd={() => setShaking(false)}>
+                <div className={`${FIELD_BASE} ${fieldError ? FIELD_ERR : FIELD_OK}`}>
+                  <span className={`pl-3 pr-4 text-sm font-bold ${MUTED}`}>@</span>
                   <input
                     id="pf-username"
                     value={username}
@@ -788,19 +830,22 @@ export default function ProfileClient() {
                     autoComplete="off"
                     spellCheck={false}
                     placeholder="اسمك في اللعبة"
-                    className="w-full bg-transparent py-3 pl-4 text-[15px] font-bold outline-none placeholder:font-normal placeholder:text-slate-400"
+                    aria-invalid={!!fieldError}
+                    className="min-h-[48px] w-full bg-transparent py-3 pl-4 text-base font-bold outline-none placeholder:font-normal placeholder:text-[var(--text-1)]"
                   />
                 </div>
               </div>
               {fieldError && (
-                <p className="mt-1.5 text-xs font-semibold text-red-500">{fieldError}</p>
+                <p className="mt-1.5 text-xs font-semibold text-red-500" role="alert">
+                  {fieldError}
+                </p>
               )}
 
               {/* الإيميل + تاريخ الانضمام */}
-              <div className="mt-4 space-y-2 rounded-2xl border border-[#eeeff4] bg-[#fafbfd] p-3.5">
+              <div className="mt-4 space-y-2 rounded-2xl border border-white/10 bg-white/[0.03] p-3.5">
                 <div className="flex items-center gap-2.5 text-sm">
-                  <Mail className="h-4 w-4 shrink-0 text-slate-400" />
-                  <span className="min-w-0 flex-1 truncate text-slate-600" dir="ltr">
+                  <Mail className={`h-4 w-4 shrink-0 ${MUTED}`} aria-hidden="true" />
+                  <span className="min-w-0 flex-1 truncate" dir="ltr">
                     {email ?? "—"}
                   </span>
                   {email && (
@@ -808,10 +853,10 @@ export default function ProfileClient() {
                       type="button"
                       onClick={copyEmail}
                       aria-label="انسخ الإيميل"
-                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white hover:text-amber-600 active:scale-95"
+                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition hover:bg-white/[0.06] active:scale-95 ${MUTED} ${FOCUS}`}
                     >
                       {copied ? (
-                        <Check className="h-4 w-4 text-emerald-500" />
+                        <Check className="h-4 w-4 text-[var(--town)]" />
                       ) : (
                         <Copy className="h-4 w-4" />
                       )}
@@ -820,8 +865,8 @@ export default function ProfileClient() {
                 </div>
                 {memberSince && (
                   <div className="flex items-center gap-2.5 text-sm">
-                    <Clock className="h-4 w-4 shrink-0 text-slate-400" />
-                    <span className="text-slate-600">معانا من {fmtDate(memberSince)}</span>
+                    <Clock className={`h-4 w-4 shrink-0 ${MUTED}`} aria-hidden="true" />
+                    <span>معانا من {fmtDate(memberSince)}</span>
                   </div>
                 )}
               </div>
@@ -831,7 +876,7 @@ export default function ProfileClient() {
                 type="button"
                 onClick={handleSave}
                 disabled={saving || !dirty}
-                className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-l from-amber-500 to-orange-500 py-3.5 text-[15px] font-extrabold text-white shadow-lg shadow-orange-500/25 transition hover:brightness-[1.03] active:scale-[.99] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none sm:w-auto sm:px-8"
+                className={`mt-5 flex min-h-[52px] w-full items-center justify-center gap-2 rounded-2xl ${INK} text-[15px] font-extrabold transition active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-40 ${FOCUS}`}
               >
                 {saving ? (
                   <>
@@ -847,40 +892,53 @@ export default function ProfileClient() {
                   "حفظ التغييرات"
                 )}
               </button>
-              <p className="mt-2.5 text-xs text-slate-400">
+              <p className={`mt-2.5 text-xs ${MUTED}`}>
                 التغييرات بتتخزن على حسابك وتظهر في كل الأجهزة.
               </p>
             </div>
           </section>
 
           {/* ==================== كارت الأصدقاء ==================== */}
-          <section className="pf-card pf-fade-up p-5 sm:p-7" style={stagger(2)}>
-            {/* رأس القسم */}
-            <div className="mb-5 flex flex-wrap items-center gap-3">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-md shadow-orange-500/25">
-                <Users className="h-5 w-5" />
+          <section
+            className={`${CARD} pf-fade-up p-4 sm:p-6 lg:p-7`}
+            style={stagger(2)}
+            aria-label="الأصدقاء"
+          >
+            {/* رأس القسم: العنوان فوق، والأزرار تحته على الموبايل */}
+            <div className="mb-5 flex flex-col gap-3.5 sm:flex-row sm:items-center">
+              <div className="flex min-w-0 flex-1 items-center gap-3">
+                <div
+                  className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${INK}`}
+                >
+                  <Users className="h-5 w-5" aria-hidden="true" />
+                </div>
+                <div className="min-w-0">
+                  <h2 className="text-lg font-black sm:text-xl">الأصدقاء</h2>
+                  <p className={`text-xs sm:text-sm ${MUTED}`}>ضيف أصحابك والعبوا مع بعض</p>
+                </div>
               </div>
-              <div className="min-w-0 flex-1">
-                <h2 className="text-lg font-extrabold sm:text-xl">الأصدقاء</h2>
-                <p className="text-xs text-slate-500 sm:text-sm">ضيف أصحابك والعبوا مع بعض</p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={openDialog}
+                  className={`flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-xl px-4 text-sm font-extrabold transition active:scale-95 sm:flex-none ${INK} ${FOCUS}`}
+                >
+                  <UserPlus className="h-4 w-4" aria-hidden="true" />
+                  إضافة صديق
+                </button>
+                <button
+                  type="button"
+                  onClick={() => loadFriends()}
+                  aria-label="حدّث القايمة"
+                  disabled={friendsLoading}
+                  className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition active:scale-95 disabled:opacity-60 ${SOFT_BTN} ${FOCUS}`}
+                >
+                  <RefreshCw
+                    className={`h-4 w-4 ${friendsLoading ? "animate-spin" : ""}`}
+                    aria-hidden="true"
+                  />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => loadFriends()}
-                aria-label="حدّث القايمة"
-                disabled={friendsLoading}
-                className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#e9eaf1] bg-white text-slate-500 shadow-sm transition hover:text-amber-600 active:scale-95 disabled:opacity-60"
-              >
-                <RefreshCw className={`h-4 w-4 ${friendsLoading ? "animate-spin" : ""}`} />
-              </button>
-              <button
-                type="button"
-                onClick={openDialog}
-                className="flex h-10 items-center gap-2 rounded-xl bg-gradient-to-l from-amber-500 to-orange-500 px-4 text-sm font-extrabold text-white shadow-lg shadow-orange-500/25 transition hover:brightness-[1.03] active:scale-95"
-              >
-                <UserPlus className="h-4 w-4" />
-                إضافة صديق
-              </button>
             </div>
 
             {friendsLoading && !friendsData ? (
@@ -888,31 +946,37 @@ export default function ProfileClient() {
               <div className="space-y-3 py-2">
                 {[0, 1, 2, 3].map((i) => (
                   <div key={i} className="flex items-center gap-3">
-                    <div className="h-11 w-11 animate-pulse rounded-full bg-[#eef0f5]" />
+                    <div className="h-11 w-11 animate-pulse rounded-full bg-white/[0.06]" />
                     <div className="flex-1 space-y-2">
-                      <div className="h-3.5 w-28 animate-pulse rounded-full bg-[#eef0f5]" />
-                      <div className="h-2.5 w-20 animate-pulse rounded-full bg-[#f2f3f8]" />
+                      <div className="h-3.5 w-28 animate-pulse rounded-full bg-white/[0.06]" />
+                      <div className="h-2.5 w-20 animate-pulse rounded-full bg-white/[0.04]" />
                     </div>
                   </div>
                 ))}
               </div>
             ) : friendsError ? (
               /* حالة الخطأ */
-              <div className="rounded-2xl border border-red-100 bg-red-50/70 p-5 text-center">
-                <UserX className="mx-auto mb-2 h-6 w-6 text-red-400" />
-                <p className="text-sm font-semibold text-red-600">{friendsError}</p>
+              <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-center">
+                <UserX className="mx-auto mb-2 h-6 w-6 text-red-400" aria-hidden="true" />
+                <p className="text-sm font-semibold text-red-600" role="alert">
+                  {friendsError}
+                </p>
                 <button
                   type="button"
                   onClick={() => loadFriends()}
-                  className="mt-3 rounded-xl border border-red-100 bg-white px-4 py-2 text-xs font-bold text-red-500 shadow-sm transition hover:bg-red-50 active:scale-95"
+                  className="mt-3 min-h-[40px] rounded-xl border border-red-200 bg-[#fff] px-4 text-xs font-bold text-red-500 transition hover:bg-red-50 active:scale-95"
                 >
                   جرّب تاني
                 </button>
               </div>
             ) : !friendsData ? null : (
               <>
-                {/* تابات */}
-                <div className="pf-tabs flex gap-2 overflow-x-auto pb-1">
+                {/* تابات: 3 أعمدة متساوية على كل الأحجام (من غير سكرول أفقي) */}
+                <div
+                  role="tablist"
+                  aria-label="أقسام الأصدقاء"
+                  className="grid grid-cols-3 gap-1 rounded-2xl border border-white/10 bg-white/[0.04] p-1"
+                >
                   {TABS.map((t) => {
                     const count =
                       t.key === "friends"
@@ -925,21 +989,24 @@ export default function ProfileClient() {
                       <button
                         key={t.key}
                         type="button"
+                        role="tab"
+                        aria-selected={active}
                         onClick={() => {
                           setTab(t.key);
                           haptic(6);
                         }}
-                        className={`flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-bold transition ${
-                          active
-                            ? "bg-[#171923] text-white shadow-md"
-                            : "bg-[#f2f3f8] text-slate-500 hover:bg-[#e9eaf3]"
+                        className={`flex min-h-[40px] min-w-0 items-center justify-center gap-1.5 rounded-xl px-1.5 text-[12px] font-bold transition-colors sm:text-[13px] ${FOCUS} ${
+                          active ? INK : `${MUTED} hover:bg-white/[0.06]`
                         }`}
                       >
-                        {t.label}
+                        <span className="truncate">
+                          <span className="sm:hidden">{t.short}</span>
+                          <span className="hidden sm:inline">{t.label}</span>
+                        </span>
                         {count > 0 && (
                           <span
-                            className={`rounded-full px-1.5 py-0.5 text-[10px] font-extrabold ${
-                              active ? "bg-white/20 text-white" : "bg-white text-amber-600 shadow-sm"
+                            className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-extrabold leading-none ${
+                              active ? "bg-[#fff]/20 text-[#fff]" : "bg-white/[0.08]"
                             }`}
                           >
                             {count}
@@ -950,17 +1017,17 @@ export default function ProfileClient() {
                   })}
                 </div>
 
-                {/* القايمة */}
-                <div className="pf-scroll mt-3 max-h-[430px] overflow-y-auto pl-1 sm:max-h-[540px]">
+                {/* القايمة: سكرول داخلي على اللابتوب بس، وعلى الفون/التابلت الصفحة هي اللي بتسكرول */}
+                <div className="pf-scroll mt-3 lg:max-h-[540px] lg:overflow-y-auto lg:pl-1" role="tabpanel">
                   {tab === "friends" &&
                     (friendsData.friends.length === 0 ? (
                       <PfEmpty
-                        icon={<User className="h-6 w-6 text-slate-300" />}
+                        icon={<User className={`h-6 w-6 ${MUTED}`} />}
                         title="لسه مفيش أصدقاء"
                         sub="دوس «إضافة صديق» وابعت أول طلب لصاحبك."
                       />
                     ) : (
-                      <ul className="divide-y divide-[#f0f1f6]">
+                      <ul className="divide-y divide-white/10">
                         {friendsData.friends.map((f, i) => (
                           <li
                             key={f.friendshipId}
@@ -975,23 +1042,30 @@ export default function ProfileClient() {
                             />
                             <div className="min-w-0 flex-1">
                               <p className="truncate text-[15px] font-extrabold">{f.username}</p>
-                              <p className="text-xs text-slate-400">أصحاب من {fmtDate(f.since)}</p>
+                              <p className={`truncate text-xs ${MUTED}`}>
+                                أصحاب من {fmtDate(f.since)}
+                              </p>
                             </div>
                             <button
                               type="button"
                               onClick={() => handleRemoveClick(f.friendshipId)}
                               disabled={busyId === f.friendshipId}
-                              className={`flex h-9 shrink-0 items-center justify-center rounded-xl border px-3 text-xs font-bold transition active:scale-95 disabled:opacity-60 ${
+                              aria-label={
+                                confirmId === f.friendshipId ? "أكّد الحذف" : "شيل من الأصدقاء"
+                              }
+                              className={`flex h-10 min-w-[40px] shrink-0 items-center justify-center rounded-xl border px-3 text-xs font-bold transition active:scale-95 disabled:opacity-60 ${FOCUS} ${
                                 confirmId === f.friendshipId
-                                  ? "border-red-200 bg-red-50 text-red-500"
-                                  : "border-[#e9eaf1] bg-white text-slate-400 hover:text-red-500"
+                                  ? "border-red-300 bg-red-50 text-red-600"
+                                  : `${SOFT_BTN} hover:text-red-500`
                               }`}
                             >
-                              {confirmId === f.friendshipId
-                                ? "متأكد؟"
-                                : busyId === f.friendshipId
-                                  ? <Loader2 className="h-4 w-4 animate-spin" />
-                                  : <Trash2 className="h-4 w-4" />}
+                              {confirmId === f.friendshipId ? (
+                                "متأكد؟"
+                              ) : busyId === f.friendshipId ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-4 w-4" />
+                              )}
                             </button>
                           </li>
                         ))}
@@ -1001,12 +1075,12 @@ export default function ProfileClient() {
                   {tab === "incoming" &&
                     (friendsData.incoming.length === 0 ? (
                       <PfEmpty
-                        icon={<Inbox className="h-6 w-6 text-slate-300" />}
+                        icon={<Inbox className={`h-6 w-6 ${MUTED}`} />}
                         title="مفيش طلبات جديدة"
                         sub="أول ما حد يبعتلك طلب صداقة هيظهر هنا."
                       />
                     ) : (
-                      <ul className="divide-y divide-[#f0f1f6]">
+                      <ul className="divide-y divide-white/10">
                         {friendsData.incoming.map((r, i) => (
                           <li
                             key={r.id}
@@ -1023,7 +1097,7 @@ export default function ProfileClient() {
                               <p className="truncate text-[15px] font-extrabold">
                                 {r.user.username}
                               </p>
-                              <p className="text-xs text-slate-400">
+                              <p className={`truncate text-xs ${MUTED}`}>
                                 عايز يضيفك · {timeAgo(r.createdAt)}
                               </p>
                             </div>
@@ -1032,7 +1106,7 @@ export default function ProfileClient() {
                                 type="button"
                                 onClick={() => acceptRequest(r)}
                                 disabled={busyId === r.id}
-                                className="flex h-9 items-center gap-1.5 rounded-xl bg-emerald-500 px-3.5 text-xs font-extrabold text-white shadow-md shadow-emerald-500/20 transition hover:bg-emerald-600 active:scale-95 disabled:opacity-60"
+                                className={`flex h-10 items-center gap-1.5 rounded-xl bg-[var(--town)] px-3.5 text-xs font-extrabold text-[#fff] transition active:scale-95 disabled:opacity-60 ${FOCUS}`}
                               >
                                 {busyId === r.id ? (
                                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -1048,7 +1122,7 @@ export default function ProfileClient() {
                                 onClick={() => dropEntry(r.id, "incoming")}
                                 disabled={busyId === r.id}
                                 aria-label="ارفض الطلب"
-                                className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#e9eaf1] bg-white text-slate-400 transition hover:text-red-500 active:scale-95 disabled:opacity-60"
+                                className={`flex h-10 w-10 items-center justify-center rounded-xl transition hover:text-red-500 active:scale-95 disabled:opacity-60 ${SOFT_BTN} ${FOCUS}`}
                               >
                                 <X className="h-4 w-4" />
                               </button>
@@ -1061,12 +1135,12 @@ export default function ProfileClient() {
                   {tab === "outgoing" &&
                     (friendsData.outgoing.length === 0 ? (
                       <PfEmpty
-                        icon={<Send className="h-6 w-6 text-slate-300" />}
+                        icon={<Send className={`h-6 w-6 ${MUTED}`} />}
                         title="معمشت أي طلبات"
                         sub="من زرار «إضافة صديق» فوق، اكتب اسم صاحبك وابعت الطلب."
                       />
                     ) : (
-                      <ul className="divide-y divide-[#f0f1f6]">
+                      <ul className="divide-y divide-white/10">
                         {friendsData.outgoing.map((r, i) => (
                           <li
                             key={r.id}
@@ -1083,16 +1157,18 @@ export default function ProfileClient() {
                               <p className="truncate text-[15px] font-extrabold">
                                 {r.user.username}
                               </p>
-                              <p className="flex items-center gap-1 text-xs text-amber-600/90">
-                                <Clock className="h-3 w-3" />
-                                مستني موافقته · {timeAgo(r.createdAt)}
+                              <p className={`flex items-center gap-1 truncate text-xs ${MUTED}`}>
+                                <Clock className="h-3 w-3 shrink-0" aria-hidden="true" />
+                                <span className="truncate">
+                                  مستني موافقته · {timeAgo(r.createdAt)}
+                                </span>
                               </p>
                             </div>
                             <button
                               type="button"
                               onClick={() => dropEntry(r.id, "outgoing")}
                               disabled={busyId === r.id}
-                              className="flex h-9 shrink-0 items-center gap-1.5 rounded-xl border border-[#e9eaf1] bg-white px-3.5 text-xs font-bold text-slate-500 transition hover:border-red-200 hover:text-red-500 active:scale-95 disabled:opacity-60"
+                              className={`flex h-10 shrink-0 items-center gap-1.5 rounded-xl px-3.5 text-xs font-bold transition hover:text-red-500 active:scale-95 disabled:opacity-60 ${SOFT_BTN} ${FOCUS}`}
                             >
                               {busyId === r.id ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -1112,10 +1188,13 @@ export default function ProfileClient() {
         </div>
       </main>
 
+      {/* شريط التنقل السفلي — موبايل بس */}
+      <BottomNav />
+
       {/* ==================== حوار إضافة صديق ==================== */}
       {dialogOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/45 backdrop-blur-sm sm:items-center sm:p-4"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-[rgba(10,10,10,0.5)] backdrop-blur-sm sm:items-center sm:p-4"
           onClick={(e) => {
             if (e.target === e.currentTarget) setDialogOpen(false);
           }}
@@ -1124,16 +1203,24 @@ export default function ProfileClient() {
             role="dialog"
             aria-modal="true"
             aria-label="إضافة صديق"
-            className="pf-pop w-full max-w-md rounded-t-3xl border border-[#e9eaf1] bg-white p-5 shadow-2xl sm:rounded-3xl sm:p-6"
+            className="pf-pop max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-t-3xl border border-white/10 bg-[var(--bg-1)] p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] shadow-2xl sm:rounded-3xl sm:p-6"
           >
+            {/* مقبض السحب (شكل بس) على الموبايل */}
+            <div
+              aria-hidden="true"
+              className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/15 sm:hidden"
+            />
+
             {/* رأس الحوار */}
             <div className="mb-4 flex items-center gap-3">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-md shadow-orange-500/25">
-                <UserPlus className="h-5 w-5" />
+              <div
+                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${INK}`}
+              >
+                <UserPlus className="h-5 w-5" aria-hidden="true" />
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="text-lg font-extrabold">إضافة صديق</h3>
-                <p className="text-xs text-slate-400">
+                <h3 className="text-lg font-black">إضافة صديق</h3>
+                <p className={`text-xs ${MUTED}`}>
                   اكتب اسم صاحبك بالظبط زي ما هو مكتوب في اللعبة.
                 </p>
               </div>
@@ -1144,7 +1231,7 @@ export default function ProfileClient() {
                   setDialogOpen(false);
                 }}
                 aria-label="اقفل"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition hover:bg-[#f2f3f8] hover:text-slate-700 active:scale-95"
+                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition hover:bg-white/[0.06] active:scale-95 ${MUTED} ${FOCUS}`}
               >
                 <X className="h-5 w-5" />
               </button>
@@ -1152,8 +1239,8 @@ export default function ProfileClient() {
 
             {addDone ? (
               /* حالة النجاح */
-              <div className="rounded-2xl border border-emerald-100 bg-emerald-50/80 p-5 text-center">
-                <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500 text-white shadow-md shadow-emerald-500/25">
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-center">
+                <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500 text-[#fff]">
                   <Check className="h-6 w-6" />
                 </div>
                 <p className="text-[15px] font-extrabold text-emerald-700">
@@ -1161,7 +1248,7 @@ export default function ProfileClient() {
                     ? `بقيتو أصحاب! ${addDone.username} كان بعتلك طلب — اتوافقناه.`
                     : `اتبعت الطلب لـ ${addDone.username}.`}
                 </p>
-                <p className="mt-1 text-xs text-emerald-600/80">
+                <p className="mt-1 text-xs text-emerald-600">
                   {addDone.kind === "accepted"
                     ? "هتلاقيه في قايمة الأصدقاء دلوقتي."
                     : "أول ما يوافق هيظهر عندك في قايمة الأصدقاء."}
@@ -1170,9 +1257,9 @@ export default function ProfileClient() {
                   type="button"
                   onClick={() => {
                     setAddDone(null);
-                    addInputRef.current?.focus();
+                    setTimeout(() => addInputRef.current?.focus(), 50);
                   }}
-                  className="mt-4 rounded-xl border border-emerald-100 bg-white px-5 py-2.5 text-sm font-extrabold text-emerald-600 shadow-sm transition hover:bg-emerald-50 active:scale-95"
+                  className="mt-4 min-h-[44px] rounded-xl border border-emerald-200 bg-[#fff] px-5 text-sm font-extrabold text-emerald-700 transition hover:bg-emerald-50 active:scale-95"
                 >
                   ضيف واحد تاني
                 </button>
@@ -1180,14 +1267,8 @@ export default function ProfileClient() {
             ) : (
               /* فورم الإرسال */
               <form onSubmit={submitAdd}>
-                <div
-                  className={`flex items-center overflow-hidden rounded-2xl border bg-[#f7f7fa] transition ${
-                    addError
-                      ? "border-red-300"
-                      : "border-[#e5e6ee] focus-within:border-amber-400 focus-within:bg-white"
-                  }`}
-                >
-                  <span className="pl-3 pr-4 text-sm font-bold text-slate-400">@</span>
+                <div className={`${FIELD_BASE} ${addError ? FIELD_ERR : FIELD_OK}`}>
+                  <span className={`pl-3 pr-4 text-sm font-bold ${MUTED}`}>@</span>
                   <input
                     ref={addInputRef}
                     value={addName}
@@ -1199,14 +1280,19 @@ export default function ProfileClient() {
                     autoComplete="off"
                     spellCheck={false}
                     placeholder="اسم الصديق"
-                    className="w-full bg-transparent py-3.5 pl-4 text-[15px] font-bold outline-none placeholder:font-normal placeholder:text-slate-400"
+                    aria-label="اسم الصديق"
+                    className="min-h-[52px] w-full bg-transparent py-3.5 pl-4 text-base font-bold outline-none placeholder:font-normal placeholder:text-[var(--text-1)]"
                   />
                 </div>
-                {addError && <p className="mt-2 text-xs font-semibold text-red-500">{addError}</p>}
+                {addError && (
+                  <p className="mt-2 text-xs font-semibold text-red-500" role="alert">
+                    {addError}
+                  </p>
+                )}
                 <button
                   type="submit"
                   disabled={addLoading || !addName.trim()}
-                  className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-l from-amber-500 to-orange-500 py-3.5 text-[15px] font-extrabold text-white shadow-lg shadow-orange-500/25 transition hover:brightness-[1.03] active:scale-[.99] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
+                  className={`mt-4 flex min-h-[52px] w-full items-center justify-center gap-2 rounded-2xl ${INK} text-[15px] font-extrabold transition active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-40 ${FOCUS}`}
                 >
                   {addLoading ? (
                     <>
@@ -1226,21 +1312,25 @@ export default function ProfileClient() {
         </div>
       )}
 
-      {/* توست */}
+      {/* توست: فوق الشريط السفلي على الموبايل */}
       {toast && (
-        <div className="pointer-events-none fixed inset-x-0 bottom-5 z-[70] flex justify-center px-4">
+        <div
+          className="pointer-events-none fixed inset-x-0 bottom-[calc(5.75rem+env(safe-area-inset-bottom,0px))] z-[70] flex justify-center px-4 md:bottom-6"
+          role="status"
+          aria-live="polite"
+        >
           <div
-            className={`pf-toast pointer-events-auto flex items-center gap-2 rounded-2xl border px-4 py-3 text-sm font-bold shadow-lg ${
+            className={`pf-toast pointer-events-auto flex max-w-full items-center gap-2 rounded-2xl border px-4 py-3 text-sm font-bold shadow-lg ${
               toast.kind === "ok"
-                ? "border-emerald-100 bg-emerald-50 text-emerald-700"
+                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
                 : toast.kind === "error"
-                  ? "border-red-100 bg-red-50 text-red-600"
-                  : "border-[#e9eaf1] bg-white text-slate-600"
+                  ? "border-red-200 bg-red-50 text-red-600"
+                  : "border-white/10 bg-[var(--bg-1)]"
             }`}
           >
             {toast.kind === "ok" && <Check className="h-4 w-4 shrink-0" />}
             {toast.kind === "error" && <X className="h-4 w-4 shrink-0" />}
-            {toast.msg}
+            <span>{toast.msg}</span>
           </div>
         </div>
       )}
@@ -1256,5 +1346,3 @@ export default function ProfileClient() {
     </div>
   );
 }
-
-
