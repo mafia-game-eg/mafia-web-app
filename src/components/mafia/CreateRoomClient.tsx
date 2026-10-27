@@ -27,6 +27,7 @@ import { getComposition } from "@/lib/mafia/composition";
 import { loadProfile, shrinkAvatar } from "@/lib/client/profile";
 
 const NAME_REQUIRED_MSG = "اكتب اسمك أولًا من الصورة الشخصية أعلى الشاشة.";
+const NETWORK_ERROR_MSG = "حصلت مشكلة في الاتصال. اتأكد من النت وجرّب تاني.";
 const STORAGE_KEY = "mafia:create-settings";
 const MIN_PLAYERS = 4;
 const MAX_PLAYERS = 20;
@@ -108,6 +109,22 @@ function sizeHint(n: number) {
 const focusRing =
   "outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-0";
 
+// اهتزاز خفيف على الموبايل (بيتجاهل بأمان على الديسكتوب)
+function haptic() {
+  try {
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+      navigator.vibrate(8);
+    }
+  } catch {
+    // مفيش مشكلة لو الاهتزاز مش مدعوم
+  }
+}
+
+// تأخير متدرج لحركات الدخول
+function stagger(i: number) {
+  return { animationDelay: `${i * 70}ms` };
+}
+
 /* ---------- مكونات صغيرة ---------- */
 
 function Section({
@@ -155,7 +172,10 @@ function ToggleRow({
       type="button"
       role="switch"
       aria-checked={checked}
-      onClick={() => onChange(!checked)}
+      onClick={() => {
+        haptic();
+        onChange(!checked);
+      }}
       className={`flex w-full items-center gap-3 rounded-2xl border px-3.5 py-3 text-right transition-colors duration-200 active:scale-[0.99] ${focusRing} ${
         checked ? "border-white/30 bg-white/[0.08]" : "border-white/10 bg-white/[0.03] hover:bg-white/[0.06]"
       }`}
@@ -196,7 +216,10 @@ function RoundBtn({
     <button
       type="button"
       aria-label={label}
-      onClick={onClick}
+      onClick={() => {
+        haptic();
+        onClick();
+      }}
       disabled={disabled}
       className={`flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/[0.04] transition-all duration-200 hover:bg-white/10 active:scale-90 disabled:pointer-events-none disabled:opacity-30 ${focusRing}`}
     >
@@ -256,34 +279,42 @@ export default function CreateRoomClient() {
   }, [s, ready]);
 
   async function handleCreate() {
+    if (loading) return;
     setError("");
+    haptic();
     if (!name.trim()) {
       setError(NAME_REQUIRED_MSG);
       return;
     }
     setLoading(true);
-    const av = await shrinkAvatar(loadProfile().avatar);
-    const res = await api.create({
-      playerName: name.trim(),
-      avatar: av,
-      maxPlayers: s.maxPlayers,
-      revealRoleOnDeath: s.revealRoleOnDeath,
-      questionPairs: s.questionPairs,
-      revoteOnTie: s.revoteOnTie,
-      extraRoleType: s.extraRoleType,
-    });
-    setLoading(false);
-    if (!res.ok) {
-      setError(res.error);
-      return;
+    try {
+      const av = await shrinkAvatar(loadProfile().avatar);
+      const res = await api.create({
+        playerName: name.trim(),
+        avatar: av,
+        maxPlayers: s.maxPlayers,
+        revealRoleOnDeath: s.revealRoleOnDeath,
+        questionPairs: s.questionPairs,
+        revoteOnTie: s.revoteOnTie,
+        extraRoleType: s.extraRoleType,
+      });
+      if (!res.ok) {
+        setError(res.error);
+        return;
+      }
+      saveSession({
+        roomCode: res.roomCode,
+        playerId: res.playerId,
+        token: res.token,
+        name: name.trim(),
+      });
+      router.push(`/room/${res.roomCode}`);
+    } catch {
+      // النت واقف أو السيرفر مردوش — نعرض رسالة ونرجّع الزرار بدل ما يفضل عايق
+      setError(NETWORK_ERROR_MSG);
+    } finally {
+      setLoading(false);
     }
-    saveSession({
-      roomCode: res.roomCode,
-      playerId: res.playerId,
-      token: res.token,
-      name: name.trim(),
-    });
-    router.push(`/room/${res.roomCode}`);
   }
 
   const primaryBtn =
@@ -291,6 +322,19 @@ export default function CreateRoomClient() {
 
   return (
     <>
+      <style>{`
+        /* الحركات المتدرجة تاخد fill-mode: both عشان مفيش وميض قبل ما الحركة تبدأ */
+        .mf-stagger { animation-fill-mode: both; }
+        /* احترام تقليل الحركة للمستخدمين اللي بيفضلوا كده */
+        @media (prefers-reduced-motion: reduce) {
+          main *, main *::before, main *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+          }
+        }
+      `}</style>
+
       <Navbar
         onOpenHowTo={() => setShowHowTo(true)}
         onProfileChange={(p) => {
@@ -305,7 +349,7 @@ export default function CreateRoomClient() {
         dir="rtl"
       >
         {/* الهيدر */}
-        <header className="flex animate-fade-in-up items-center gap-3">
+        <header className="mf-stagger flex animate-fade-in-up items-center gap-3" style={stagger(0)}>
           <button
             type="button"
             aria-label="رجوع"
@@ -321,13 +365,14 @@ export default function CreateRoomClient() {
         </header>
 
         <div className="mt-4 grid gap-4 md:mt-6 lg:grid-cols-2 lg:items-start lg:gap-6">
-          {/* العمود الأول: المضيف + الأنماط + اللاعبين */}
+          {/* العمود الأول: المضيف + اللاعبين (الأنماط مدموجة جواه) */}
           <div className="flex flex-col gap-4">
             {/* كارت المضيف */}
             <div
-              className={`flex items-center gap-3 rounded-2xl border px-3.5 py-3 ${
+              className={`mf-stagger flex animate-fade-in-up items-center gap-3 rounded-2xl border px-3.5 py-3 ${
                 name.trim() ? "border-white/10 bg-[var(--bg-1)]" : "border-red-400/30 bg-red-500/10"
               }`}
+              style={stagger(1)}
             >
               <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/15 bg-white/[0.06]">
                 {typeof avatar === "string" && avatar ? (
@@ -350,83 +395,108 @@ export default function CreateRoomClient() {
               )}
             </div>
 
-            {/* أنماط جاهزة */}
-            <Section icon={<Zap className="h-4 w-4" />} title="ابدأ بنمط جاهز">
-              <div className="grid grid-cols-3 gap-2 md:gap-3">
-                {PRESETS.map((p) => {
-                  const active = activePreset?.id === p.id;
-                  return (
-                    <button
-                      key={p.id}
-                      type="button"
-                      aria-pressed={active}
-                      onClick={() => setS(p.settings)}
-                      className={`rounded-xl border px-2 py-3 text-center transition-colors duration-200 active:scale-95 ${focusRing} ${
-                        active
-                          ? "border-white bg-white/15"
-                          : "border-white/10 bg-white/[0.03] hover:bg-white/[0.07]"
-                      }`}
-                    >
-                      <span className="block text-sm font-bold">{p.title}</span>
-                      <span className="mt-0.5 block text-[11px] text-[var(--text-1)] md:text-xs">
-                        {p.desc}
-                      </span>
-                    </button>
-                  );
-                })}
+            {/* اللاعبون: العدد + الأنماط الجاهزة + التوزيع */}
+            <section
+              className="mf-stagger animate-fade-in-up rounded-3xl border border-white/10 bg-[var(--bg-1)] p-4 md:p-5"
+              style={stagger(2)}
+            >
+              <div className="mb-4 flex items-center gap-2.5">
+                <h2 className="flex items-center gap-2.5 text-sm font-bold md:text-base">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-[var(--text-1)]">
+                    <Users className="h-4 w-4" />
+                  </span>
+                  عدد اللاعبين
+                </h2>
               </div>
-            </Section>
 
-            {/* اللاعبون */}
-            <Section icon={<Users className="h-4 w-4" />} title="عدد اللاعبين">
-              <div className="flex items-center justify-between gap-3">
-                <RoundBtn
-                  label="زيادة العدد"
-                  onClick={() => update({ maxPlayers: Math.min(MAX_PLAYERS, s.maxPlayers + 1) })}
-                  disabled={s.maxPlayers >= MAX_PLAYERS}
-                >
-                  <Plus className="h-5 w-5" />
-                </RoundBtn>
-                <div className="text-center">
-                  <div className="flex items-baseline justify-center gap-1.5">
-                    <span className="text-5xl font-extrabold leading-none tabular-nums text-[var(--gold)] md:text-6xl">
-                      {s.maxPlayers}
-                    </span>
-                    <span className="text-sm text-[var(--text-1)]">لاعب</span>
-                  </div>
-                  <p className="mt-1.5 text-xs text-[var(--text-1)]">{sizeHint(s.maxPlayers)}</p>
+              {/* أنماط جاهزة — صف مدموج بدل قسم كامل */}
+              <div className="mb-4">
+                <div className="mb-2 flex items-center gap-1.5 text-[11px] font-bold text-[var(--text-1)]">
+                  <Zap className="h-3 w-3" aria-hidden="true" />
+                  أنماط جاهزة
+                  {activePreset && <span className="font-normal">· مفعّل: {activePreset.title}</span>}
                 </div>
-                <RoundBtn
-                  label="تقليل العدد"
-                  onClick={() => update({ maxPlayers: Math.max(MIN_PLAYERS, s.maxPlayers - 1) })}
-                  disabled={s.maxPlayers <= MIN_PLAYERS}
-                >
-                  <Minus className="h-5 w-5" />
-                </RoundBtn>
+                <div className="grid grid-cols-3 gap-2">
+                  {PRESETS.map((p) => {
+                    const active = activePreset?.id === p.id;
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        aria-pressed={active}
+                        onClick={() => {
+                          haptic();
+                          setS(p.settings);
+                        }}
+                        className={`rounded-xl border px-2 py-2 text-center transition-colors duration-200 active:scale-95 ${focusRing} ${
+                          active
+                            ? "border-white bg-white/15"
+                            : "border-white/10 bg-white/[0.03] hover:bg-white/[0.07]"
+                        }`}
+                      >
+                        <span className="block text-[13px] font-bold">{p.title}</span>
+                        <span className="block text-[10px] text-[var(--text-1)]">{p.desc}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
-              <input
-                type="range"
-                min={MIN_PLAYERS}
-                max={MAX_PLAYERS}
-                value={s.maxPlayers}
-                onChange={(e) => update({ maxPlayers: Number(e.target.value) })}
-                aria-label="عدد اللاعبين الأقصى"
-                className="mt-4 w-full accent-white"
-              />
+              <div className="border-t border-white/10 pt-4">
+                <div className="flex items-center justify-between gap-3">
+                  <RoundBtn
+                    label="زيادة العدد"
+                    onClick={() => update({ maxPlayers: Math.min(MAX_PLAYERS, s.maxPlayers + 1) })}
+                    disabled={s.maxPlayers >= MAX_PLAYERS}
+                  >
+                    <Plus className="h-5 w-5" />
+                  </RoundBtn>
+                  <div className="text-center">
+                    <div className="flex items-baseline justify-center gap-1.5">
+                      <span className="text-5xl font-extrabold leading-none tabular-nums text-[var(--gold)] md:text-6xl">
+                        {s.maxPlayers}
+                      </span>
+                      <span className="text-sm text-[var(--text-1)]">لاعب</span>
+                    </div>
+                    <p className="mt-1.5 text-xs text-[var(--text-1)]">{sizeHint(s.maxPlayers)}</p>
+                  </div>
+                  <RoundBtn
+                    label="تقليل العدد"
+                    onClick={() => update({ maxPlayers: Math.max(MIN_PLAYERS, s.maxPlayers - 1) })}
+                    disabled={s.maxPlayers <= MIN_PLAYERS}
+                  >
+                    <Minus className="h-5 w-5" />
+                  </RoundBtn>
+                </div>
 
-              <div className="mt-4">
-                <TeamSplit town={comp.town} mafia={comp.mafia} label="التوزيع عند اكتمال العدد" />
+                <input
+                  type="range"
+                  min={MIN_PLAYERS}
+                  max={MAX_PLAYERS}
+                  value={s.maxPlayers}
+                  onChange={(e) => update({ maxPlayers: Number(e.target.value) })}
+                  aria-label="عدد اللاعبين الأقصى"
+                  className="mt-4 w-full accent-white"
+                />
+                <div className="mt-1 flex justify-between text-[10px] tabular-nums text-[var(--text-1)]" aria-hidden="true">
+                  <span>{MIN_PLAYERS}</span>
+                  <span>{MAX_PLAYERS}</span>
+                </div>
+
+                <div className="mt-4">
+                  <TeamSplit town={comp.town} mafia={comp.mafia} label="التوزيع عند اكتمال العدد" />
+                </div>
+                <p className="mt-3 text-xs leading-relaxed text-[var(--text-1)]">
+                  اللعبة تبدأ بمن حضر، والعدد ده هو الحد الأقصى للي يقدر يدخل الغرفة.
+                </p>
               </div>
-              <p className="mt-3 text-xs leading-relaxed text-[var(--text-1)]">
-                اللعبة تبدأ بمن حضر، والعدد ده هو الحد الأقصى للي يقدر يدخل الغرفة.
-              </p>
-            </Section>
+            </section>
           </div>
 
           {/* العمود التاني: القواعد + الدور الإضافي + زرار الإنشاء */}
           <div className="flex flex-col gap-4">
             {/* القواعد */}
+            <div className="mf-stagger animate-fade-in-up" style={stagger(3)}>
             <Section icon={<ListChecks className="h-4 w-4" />} title="قواعد اللعبة">
               <div className="flex flex-col gap-2.5">
                 <ToggleRow
@@ -457,7 +527,10 @@ export default function CreateRoomClient() {
                       type="button"
                       role="radio"
                       aria-checked={s.questionPairs === n}
-                      onClick={() => update({ questionPairs: n })}
+                      onClick={() => {
+                        haptic();
+                        update({ questionPairs: n });
+                      }}
                       className={`rounded-xl border py-2.5 text-sm font-bold tabular-nums transition-colors duration-200 active:scale-90 ${focusRing} ${
                         s.questionPairs === n
                           ? "border-[var(--gold)] bg-[var(--gold)]/15 text-[var(--gold)]"
@@ -470,8 +543,10 @@ export default function CreateRoomClient() {
                 </div>
               </div>
             </Section>
+            </div>
 
             {/* الدور الإضافي */}
+            <div className="mf-stagger animate-fade-in-up" style={stagger(4)}>
             <Section
               icon={<ShieldCheck className="h-4 w-4" />}
               title="الدور الإضافي"
@@ -503,13 +578,20 @@ export default function CreateRoomClient() {
                       type="button"
                       role="radio"
                       aria-checked={active}
-                      onClick={() => update({ extraRoleType: r.id })}
+                      aria-disabled={!extraActive}
+                      onClick={() => {
+                        if (!extraActive) return; // مقفول لحد ما العدد يوصل للحد المطلوب
+                        haptic();
+                        update({ extraRoleType: r.id });
+                      }}
                       className={`flex flex-col items-start gap-2 rounded-2xl border p-3.5 text-right transition-colors duration-200 active:scale-[0.98] ${focusRing} ${
                         active
                           ? isSniper
                             ? "border-[var(--gold)] bg-[var(--gold)]/15 text-[var(--gold)]"
                             : "border-white bg-white/15 text-white"
-                          : "border-white/10 bg-white/[0.03] hover:bg-white/[0.07]"
+                          : extraActive
+                            ? "border-white/10 bg-white/[0.03] hover:bg-white/[0.07]"
+                            : "cursor-not-allowed border-white/10 bg-white/[0.03]"
                       }`}
                     >
                       {r.icon}
@@ -520,9 +602,10 @@ export default function CreateRoomClient() {
                 })}
               </div>
             </Section>
+            </div>
 
             {/* الإنشاء: ثابت تحت على الموبايل والتابلت، عادي في العمود على الديسكتوب */}
-            <div className="sticky bottom-0 z-10 -mx-4 bg-gradient-to-t from-[var(--bg-0)] via-[var(--bg-0)]/95 to-transparent px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-6 md:-mx-6 md:px-6 lg:static lg:mx-0 lg:bg-none lg:p-0">
+            <div className="mf-stagger sticky bottom-0 z-10 -mx-4 animate-fade-in-up bg-gradient-to-t from-[var(--bg-0)] via-[var(--bg-0)]/95 to-transparent px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-6 md:-mx-6 md:px-6 lg:static lg:mx-0 lg:bg-none lg:p-0" style={stagger(5)}>
               {error && (
                 <p
                   role="alert"

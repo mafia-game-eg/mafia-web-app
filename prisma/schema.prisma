@@ -21,6 +21,10 @@ model User {
 
   accounts Account[]
   sessions Session[]
+
+  // نظام الأصدقاء (جديد)
+  friendshipsSent     Friendship[] @relation("FriendshipsSent")
+  friendshipsReceived Friendship[] @relation("FriendshipsReceived")
 }
 
 model Account {
@@ -57,4 +61,20 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+// نظام الأصدقاء (جديد): طلب صداقة زي الشطرنج
+// PENDING = طلب مستني موافقة، ACCEPTED = بقوا أصحاب
+model Friendship {
+  id          String   @id @default(cuid())
+  status      String   @default("PENDING")
+  requesterId String
+  addresseeId String
+  createdAt   DateTime @default(now())
+
+  requester User @relation("FriendshipsSent",     fields: [requesterId], references: [id], onDelete: Cascade)
+  addressee User @relation("FriendshipsReceived", fields: [addresseeId], references: [id], onDelete: Cascade)
+
+  @@unique([requesterId, addresseeId])
+  @@index([addresseeId])
 }

@@ -2,13 +2,38 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { checkUsername } from "@/lib/username-rules";
+
 // الصورة بتتحفظ كـ data URL: نسمح بصيغ الصور العادية بس (من غير SVG) وبحجم صغير،
 // لأنها هتتبعت مع قايمة الأصدقاء وتتكرر كتير.
 const AVATAR_RE = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/;
 const AVATAR_MAX_CHARS = 120_000;
 
+// حدّ بسيط ضد التعديلات المتكررة: 15 تحديث كل 5 دقايق لكل مستخدم.
+// (الحاجز ده في الميموري: بيتصفّر لو السيرفر أعاد التشغيل، وده كفاية كطبقة حماية أولى.)
+const PATCH_WINDOW_MS = 5 * 60 * 1000;
+const PATCH_LIMIT = 15;
+const patchHits = new Map<string, number[]>();
+
 function fail(error: string, status: number) {
   return NextResponse.json({ error }, { status });
+}
+
+function tooManyPatches(userId: string) {
+  const now = Date.now();
+  const hits = (patchHits.get(userId) ?? []).filter((t) => now - t < PATCH_WINDOW_MS);
+  if (hits.length >= PATCH_LIMIT) {
+    patchHits.set(userId, hits);
+    return true;
+  }
+  hits.push(now);
+  patchHits.set(userId, hits);
+  // تنظيف خفيف للماب عشان متكبرش على الفاضي
+  if (patchHits.size > 500) {
+    for (const [key, list] of patchHits) {
+      if (list.every((t) => now - t >= PATCH_WINDOW_MS)) patchHits.delete(key);
+    }
+  }
+  return false;
 }
 
 export async function GET() {
@@ -17,7 +42,7 @@ export async function GET() {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { id: true, username: true, avatar: true, email: true },
+    select: { id: true, username: true, avatar: true, email: true, createdAt: true },
   });
   if (!user) return fail("الحساب مش موجود.", 404);
 
@@ -28,6 +53,10 @@ export async function PATCH(req: Request) {
   const session = await auth();
   if (!session?.user?.id) return fail("لازم تسجّل دخول.", 401);
   const userId = session.user.id;
+
+  if (tooManyPatches(userId)) {
+    return fail("كترت التعديلات شوية. استنى شوية صغير وجرّب تاني.", 429);
+  }
 
   const raw = await req.json().catch(() => null);
   if (!raw || typeof raw !== "object") return fail("الطلب مش صحيح.", 400);
